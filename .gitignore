@@ -1,0 +1,6 @@
+.env
+/bot/lib/DI_API_Obj/__pycache__/*.pyc
+/bot/lib/obj/__pycache__/*.pyc
+/bot/lib/__pycache__/*.pyc
+/bot/__pycache__/*.pyc
+/venv/*

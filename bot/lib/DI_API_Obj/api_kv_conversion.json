@@ -1,0 +1,55 @@
+{
+    "weapons": {
+        "Ace_Default": {},
+        "Ace_Mod1": {},
+        "Ace_Mod2": {},
+        "Cavaliere_Default": {},
+        "Cavaliere_Mod1": {},
+        "Cavaliere_Mod2": {},
+        "Chavez_Default": {},
+        "Chavez_Mod1": {},
+        "Chavez_Mod2": {},
+        "Hans_Default": {},
+        "Hans_Mod1": {},
+        "Hans_Mod2": {},
+        "Larcin_Default": {
+            "c": "Larcin",
+            "n": "Silence"
+        },
+        "Larcin_Mod1": {
+            "c": "Larcin",
+            "n": "Violence"
+        },
+        "Larcin_Mod2": {
+            "c": "Larcin",
+            "n": "Cadence"
+        },
+        "Octo_Default": {},
+        "Octo_Mod1": {},
+        "Octo_Mod2": {},
+        "Red_Default": {},
+        "Red_Mod1": {},
+        "Red_Mod2": {},
+        "Sasori_Default": {},
+        "Sasori_Mod1": {},
+        "Sasori_Mod2": {},
+        "Squire_Default": {},
+        "Squire_Mod1": {},
+        "Squire_Mod2": {},
+        "Vigil_Default": {},
+        "Vigil_Mod1": {},
+        "Vigil_Mod2": {},
+        "Xiu_Default": {},
+        "Xiu_Mod1": {},
+        "Xiu_Mod2": {},
+        "Yumi_Default": {},
+        "Yumi_Mod1": {},
+        "Yumi_Mod2": {}
+    },
+    "passives": {
+
+    },
+    "actives": {
+
+    }
+}
