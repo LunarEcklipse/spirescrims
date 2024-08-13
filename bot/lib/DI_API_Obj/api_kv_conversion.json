@@ -1,11 +1,29 @@
 {
     "weapons": {
-        "Ace_Default": {},
-        "Ace_Mod1": {},
-        "Ace_Mod2": {},
-        "Cavaliere_Default": {},
-        "Cavaliere_Mod1": {},
-        "Cavaliere_Mod2": {},
+        "Ace_Default": {
+            "c": "Ace",
+            "n": "Queen of Diamond"
+        },
+        "Ace_Mod1": {
+            "c": "Ace",
+            "n": "King of Diamond"
+        },
+        "Ace_Mod2": {
+            "c": "Ace",
+            "n": "Jack of Diamond"
+        },
+        "Cavaliere_Default": {
+            "c": "Cavaliere",
+            "n": "Dragoons"
+        },
+        "Cavaliere_Mod1": {
+            "c": "Cavaliere",
+            "n": "Hydras"
+        },
+        "Cavaliere_Mod2": {
+            "c": "Cavaliere",
+            "n": "Wyverns"
+        },
         "Chavez_Default": {},
         "Chavez_Mod1": {},
         "Chavez_Mod2": {},
@@ -47,9 +65,134 @@
         "Yumi_Mod2": {}
     },
     "passives": {
+        "Ace_Default": {
+            "c": "Ace",
+            "n": "Diamond's Bet"
+        },
+        "Ace_Mod1": {
+            "c": "Ace",
+            "n": "Crippling Shot"
+        },
+        "Ace_Mod2": {
+            "c": "Ace",
+            "n": "Neutralizing Shot"
+        },
+        "Cavaliere_Default": {
+            "c": "Cavaliere",
+            "n": "Tiger's Leap"
+        },
+        "Cavaliere_Mod1": {
+            "c": "Cavaliere",
+            "n": "Maximum Velocity"
+        },
+        "Cavaliere_Mod2": {
+            "c": "Cavaliere",
+            "n": "Baleful Blow"
+        },
+        "Chavez_Default": {},
+        "Chavez_Mod1": {},
+        "Chavez_Mod2": {},
+        "Hans_Default": {},
+        "Hans_Mod1": {},
+        "Hans_Mod2": {},
+        "Larcin_Default": {
+            "c": "Larcin",
+            "n": "Merci Beaucoup!"
+        },
+        "Larcin_Mod1": {
+            "c": "Larcin",
+            "n": "Souffre-Douleur"
+        },
+        "Larcin_Mod2": {
+            "c": "Larcin",
+            "n": "Pickpocket"
+        },
+        "Octo_Default": {},
+        "Octo_Mod1": {},
+        "Octo_Mod2": {},
+        "Red_Default": {},
+        "Red_Mod1": {},
+        "Red_Mod2": {},
+        "Sasori_Default": {},
+        "Sasori_Mod1": {},
+        "Sasori_Mod2": {},
+        "Squire_Default": {},
+        "Squire_Mod1": {},
+        "Squire_Mod2": {},
+        "Vigil_Default": {},
+        "Vigil_Mod1": {},
+        "Vigil_Mod2": {},
+        "Xiu_Default": {},
+        "Xiu_Mod1": {},
+        "Xiu_Mod2": {},
+        "Yumi_Default": {},
+        "Yumi_Mod1": {},
+        "Yumi_Mod2": {}
 
     },
     "actives": {
-
+        "Ace_Default": {
+            "c": "Ace",
+            "n": "Queen's Gaze"
+        },
+        "Ace_Mod1": {
+            "c": "Ace",
+            "n": "Stacked Odds"
+        },
+        "Ace_Mod2": {
+            "c": "Ace",
+            "n": "Big Blind"
+        },
+        "Cavaliere_Default": {
+            "c": "Cavaliere",
+            "n": "Investigation"
+        },
+        "Cavaliere_Mod1": {
+            "c": "Cavaliere",
+            "n": "Redemption"
+        },
+        "Cavaliere_Mod2": {
+            "c": "Cavaliere",
+            "n": "It's a Setup"
+        },
+        "Chavez_Default": {},
+        "Chavez_Mod1": {},
+        "Chavez_Mod2": {},
+        "Hans_Default": {},
+        "Hans_Mod1": {},
+        "Hans_Mod2": {},
+        "Larcin_Default": {
+            "c": "Larcin",
+            "n": "Adieu"
+        },
+        "Larcin_Mod1": {
+            "c": "Larcin",
+            "n": "Grande Finale"
+        },
+        "Larcin_Mod2": {
+            "c": "Larcin",
+            "n": "Tour du Monde"
+        },
+        "Octo_Default": {},
+        "Octo_Mod1": {},
+        "Octo_Mod2": {},
+        "Red_Default": {},
+        "Red_Mod1": {},
+        "Red_Mod2": {},
+        "Sasori_Default": {},
+        "Sasori_Mod1": {},
+        "Sasori_Mod2": {},
+        "Squire_Default": {},
+        "Squire_Mod1": {},
+        "Squire_Mod2": {},
+        "Vigil_Default": {},
+        "Vigil_Mod1": {},
+        "Vigil_Mod2": {},
+        "Xiu_Default": {},
+        "Xiu_Mod1": {},
+        "Xiu_Mod2": {},
+        "Yumi_Default": {},
+        "Yumi_Mod1": {},
+        "Yumi_Mod2": {}
     }
 }
