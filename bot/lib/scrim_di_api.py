@@ -112,7 +112,6 @@ class ScrimDiAPI:
     async def upgrade_user_partial(self, user_partial: SweetUserPartial) -> SweetUser:
         return await self.get_user(user_partial.sweet_id)
     
-
 async def main():
     api = await ScrimDiAPI.initialize("7ju2ptnjudbajq5v7shpbkkd9s", "afckj5lmdfoq8phlki0cckqru69oabb5ij0u870jo5vbnas29rh")
     user_search = await api.search_users("HatBun")

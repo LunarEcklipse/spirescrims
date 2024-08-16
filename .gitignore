@@ -3,4 +3,6 @@
 /bot/lib/obj/__pycache__/*.pyc
 /bot/lib/__pycache__/*.pyc
 /bot/__pycache__/*.pyc
+bot/rsc/spire_scrims.db
 /venv/*
+
