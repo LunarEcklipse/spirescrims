@@ -1,10 +1,15 @@
-import sqlean, pytz, asyncio, sys, threading
+import sqlean, pytz, asyncio, sys, threading, os
 from typing import List, Tuple, Union
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from contextlib import closing
 
 sqlean.extensions.enable_all()
+
+absPath = os.path.abspath(__file__) # This little chunk makes sure the working directory is correct.
+dname = os.path.dirname(absPath)
+os.chdir(dname)
+load_dotenv()
 
 sqlite_db_path: str = "../rsc/spire_scrims.db"
 db_lock = threading.Lock()
@@ -22,7 +27,7 @@ class BoolConvert:
 
 if __name__ == "__main__":
     print("This does not run on its own.")
-    sys.exit()
+    # sys.exit()
 
 def connect_to_db() -> sqlean.Connection:
     '''Connects to the database.'''
@@ -43,7 +48,6 @@ def database_transaction(func): # This is a decorator that wraps a function in a
         with db_lock:
             with closing(connect_to_db()) as conn:
                 with closing(conn.cursor()) as cur:
-                    conn.begin()
                     try:
                         result = func(cur, *args, **kwargs)
                         conn.commit()
@@ -58,7 +62,9 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     '''Initializes the database.'''
     cur.execute("CREATE TABLE IF NOT EXISTS api_data (auth_token TEXT, auth_expiration TEXT);")
 
-class DeceiveAPIData:
+init_scrim_db()
+
+class DeceiveAPIAuthData:
     
     @staticmethod
     def is_token_expired(expiration: Union[datetime, None]) -> bool:
@@ -83,3 +89,5 @@ class DeceiveAPIData:
         '''Sets the auth token in the database.'''
         cur.execute("DELETE FROM api_data;")
         cur.execute("INSERT INTO api_data (auth_token, auth_expiration) VALUES (?, ?);", (token, DatetimeConvert.convert_datetime_to_str(expiration)))
+
+    
