@@ -35,7 +35,7 @@ class MatchScore:
         self.extracted = extracted
 
     def _get_elimination_score(self) -> Union[str, None]:
-        match eliminations:
+        match self.eliminations:
             case 0:
                 return None
             case 1:
@@ -47,7 +47,7 @@ class MatchScore:
         return 'Vault Entered: 1' if self.vault_entered else None
     
     def _print_vault_terminals_disabled_score(self) -> Union[str, None]:
-        match vault_terminals_disabled:
+        match self.vault_terminals_disabled:
             case 0:
                 return None
             case 1:
@@ -56,7 +56,7 @@ class MatchScore:
                 return f'{self.vault_terminals_disabled} Vault Terminals Disabled: {self.vault_terminals_disabled}'
 
     def _print_allies_revived_score(self) -> Union[str, None]:
-        match allies_revived:
+        match self.allies_revived:
             case 0:
                 return None
             case 1:
