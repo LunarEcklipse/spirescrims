@@ -3,6 +3,7 @@ from typing import Union, List
 from PIL import Image
 import discord
 from discord.ext import commands
+import lib.scrim_sysinfo as scrim_sysinfo
 
 channel_id_list: List[int] = [1224071523187425320, 1256544655072428113, 1224071542854516739] # Add your channel IDs here
 warnings.filterwarnings("ignore", category=FutureWarning, module="easyocr")
@@ -23,7 +24,7 @@ class ScrimReader(commands.Cog):
     bot: discord.Bot
 
     def __init__(self, bot: discord.Bot):
-        self.reader = easyocr.Reader(['en'], verbose=False)
+        self.reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
         self.bot = bot
 
     ### READER FUNCTIONS ###
@@ -34,7 +35,7 @@ class ScrimReader(commands.Cog):
         `image_bytes` : bytes - The image data in bytes.'''
         img = Image.open(io.BytesIO(image_bytes))
         # Check if the image is larger than 480 pixels on its shortest side. If it is, resize it.
-        img = self._resize_image_shortest_side(img, 480)
+        img = self._resize_image_shortest_side(img, 720)
         # Save the resized image to a BytesIO buffer
         image_buffer = io.BytesIO()
         img.save(image_buffer, format='PNG')
@@ -80,6 +81,15 @@ class ScrimReader(commands.Cog):
             if match:
                 # Get the number of eliminations on the front of the line
                 return int(match.group(1))
+        # If we make it here, check for the word "eliminations = X" in the text. We want to capture the X.
+        for line in text:
+            # First make line lowercase
+            line = line.lower()
+            # Search for the pattern
+            match = re.search(r'(?i)eliminations? ?= ([0-9]+)', line)
+            if match:
+                # Get the number of eliminations on the back of the line. When we do it this way, we calculate by score instead and divide by 100.
+                return int(int(match.group(1)) / 100)
         return None
 
     def _find_if_entered_vault(self, text: Union[List[str], str, None]) -> bool:
