@@ -1,10 +1,11 @@
-import os, sys, io, easyocr, re
+import os, sys, io, easyocr, re, warnings
 from typing import Union, List
 from PIL import Image
 import discord
 from discord.ext import commands
 
 channel_id_list: List[int] = [1224071523187425320, 1256544655072428113, 1224071542854516739] # Add your channel IDs here
+warnings.filterwarnings("ignore", category=FutureWarning, module="easyocr")
 
 class MatchScore:
     total_score: int
@@ -22,7 +23,7 @@ class ScrimReader(commands.Cog):
     bot: discord.Bot
 
     def __init__(self, bot: discord.Bot):
-        self.reader = easyocr.Reader(['en'])
+        self.reader = easyocr.Reader(['en'], verbose=False)
         self.bot = bot
 
     ### READER FUNCTIONS ###
@@ -30,13 +31,38 @@ class ScrimReader(commands.Cog):
     def read_image(self, image_bytes: bytes) -> Union[List[str], str, None]:
         '''Reads text from an image using EasyOCR. Returns a list of strings.
         ### Parameters
-        `img_path` : str - The path to the image file.'''
+        `image_bytes` : bytes - The image data in bytes.'''
         img = Image.open(io.BytesIO(image_bytes))
-        result = self.reader.readtext(image_bytes)
+        # Check if the image is larger than 480 pixels on its shortest side. If it is, resize it.
+        img = self._resize_image_shortest_side(img, 480)
+        # Save the resized image to a BytesIO buffer
+        image_buffer = io.BytesIO()
+        img.save(image_buffer, format='PNG')
+        image_buffer.seek(0)
+        # Read text from the image bytes
+        result = self.reader.readtext(image_buffer.getvalue())
         out: list = []
         for detection in result:
             out.append(detection[1])
         return out
+
+    def _resize_image_shortest_side(self, img: Image, size: int) -> Image:
+        '''Resizes an image so that the shortest side is a certain size.
+        ### Parameters
+        `img` : Image - The image to resize.
+        `size` : int - The size of the shortest side.'''
+        if min(img.size) <= size:
+            return img
+        width, height = img.size
+        if width < height:
+            ratio = size / width
+            new_width = size
+            new_height = int(height * ratio)
+        else:
+            ratio = size / height
+            new_height = size
+            new_width = int(width * ratio)
+        return img.resize((new_width, new_height))
 
     def _find_num_eliminations(self, text: Union[List[str], str, None]) -> Union[int, None]:
         '''Finds the number of eliminations in a list of strings.'''

@@ -23,6 +23,5 @@ bot.add_cog(scrim_reader.ScrimReader(bot))
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    print('------')
 
 bot.run(os.getenv('DISCORD_BOT_TOKEN')) # Get the token from the .env file
