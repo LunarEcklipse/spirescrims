@@ -22,7 +22,15 @@ bot = discord.Bot(intents=intents)
 if scrim_sysinfo.cpu_is_x86() and not scrim_sysinfo.cpu_supports_avx2():
     RuntimeWarning("You are using an x86_64 CPU does not support AVX2 instructions, which are required for EasyOCR. Disabling Reader...")
 else:
+    print("Initializing Reader modules, this may take several minutes...")
     bot.add_cog(scrim_reader.ScrimReader(bot))
+    if __name__ == "__main__":
+        reader_cog: scrim_reader.ScrimReader = bot.cogs.get("ScrimReader")
+        reader_cog.spawn_processes()
+    print("Done!")
+
+cog = bot.cogs.get("ScrimReader")
+print("Here")
 
 @bot.event
 async def on_ready():
