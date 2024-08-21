@@ -11,8 +11,8 @@ class AccountProgression:
                 self.mastery_level = mastery_level
                 self.echelon_level = echelon_level
                 
-                account_level: int
-                character_progression: dict # Dict of keys with each character and values of CharacterProgression
+        account_level: int
+        character_progression: dict # Dict of keys with each character and values of CharacterProgression
 
         def __init__(self, account_level: int, character_progression: dict):
             self.account_level = account_level

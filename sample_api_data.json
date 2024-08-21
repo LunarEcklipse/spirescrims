@@ -1,0 +1,908 @@
+{
+    "displayName": "HatBun",
+    "matchHistory": [],
+    "notASkillRank": 1318,
+    "progression": {
+        "Account": {
+            "level": 342
+        },
+        "Vigil": {
+            "mastery": 10,
+            "echelon": 0
+        },
+        "Ace": {
+            "mastery": 10,
+            "echelon": 2
+        },
+        "Yumi": {
+            "mastery": 10,
+            "echelon": 0
+        },
+        "Cavaliere": {
+            "mastery": 10,
+            "echelon": 12
+        },
+        "Chavez": {
+            "mastery": 10,
+            "echelon": 0
+        },
+        "Hans": {
+            "mastery": 10,
+            "echelon": 0
+        },
+        "Octo": {
+            "mastery": 10,
+            "echelon": 1
+        },
+        "Sasori": {
+            "mastery": 10,
+            "echelon": 0
+        },
+        "Red": {
+            "mastery": 10,
+            "echelon": 0
+        },
+        "Squire": {
+            "mastery": 10,
+            "echelon": 0
+        },
+        "Xiu": {
+            "mastery": 10,
+            "echelon": 4
+        },
+        "Larcin": {
+            "mastery": 10,
+            "echelon": 0
+        }
+    },
+    "stats": {
+        "lifetime": {
+            "agentPlayTime": {
+                "Hans": 26811,
+                "Yumi": 25687,
+                "Octo": 20843,
+                "Cavaliere": 230791,
+                "Chavez": 41254,
+                "Larcin": 51164,
+                "Sasori": 25657,
+                "Squire": 18703,
+                "Ace": 89296,
+                "Xiu": 118018,
+                "Red": 51699,
+                "Vigil": 8141
+            },
+            "activePickSolo": {
+                "Ace_Mod1": 64,
+                "Xiu_Default": 28,
+                "Yumi_Default": 8,
+                "Vigil_Default": 3,
+                "Cavaliere_Mod1": 1,
+                "Yumi_Mod1": 3,
+                "Xiu_Mod2": 85,
+                "Cavaliere_Mod2": 12,
+                "Sasori_Mod1": 17,
+                "Squire_Mod1": 25,
+                "Vigil_Mod2": 1,
+                "Hans_Mod2": 4,
+                "Squire_Mod2": 1,
+                "Vigil_Mod1": 4,
+                "Octo_Mod1": 17,
+                "Cavaliere_Default": 5,
+                "Squire_Default": 12,
+                "Sasori_Default": 3
+            },
+            "activePickTrio": {
+                "Ace_Mod1": 58,
+                "Xiu_Default": 33,
+                "Yumi_Default": 8,
+                "Red_Default": 2,
+                "Vigil_Default": 4,
+                "Yumi_Mod1": 20,
+                "Larcin_Default": 5,
+                "Xiu_Mod2": 54,
+                "Cavaliere_Mod2": 83,
+                "Vigil_Mod2": 1,
+                "Hans_Mod2": 17,
+                "Octo_Mod1": 1,
+                "Red_Mod1": 11,
+                "Octo_Mod2": 4,
+                "Hans_Default": 23,
+                "Cavaliere_Default": 35,
+                "Squire_Default": 1,
+                "Sasori_Default": 1
+            },
+            "agentPickSolo": {
+                "Hans": 9,
+                "Yumi": 11,
+                "Octo": 17,
+                "Cavaliere": 96,
+                "Chavez": 17,
+                "Larcin": 56,
+                "Sasori": 20,
+                "Squire": 38,
+                "Ace": 85,
+                "Xiu": 113,
+                "Red": 23,
+                "Vigil": 8
+            },
+            "agentPickTrio": {
+                "Hans": 40,
+                "Yumi": 34,
+                "Octo": 5,
+                "Cavaliere": 165,
+                "Chavez": 44,
+                "Larcin": 20,
+                "Sasori": 1,
+                "Squire": 1,
+                "Ace": 75,
+                "Xiu": 87,
+                "Red": 58,
+                "Vigil": 5
+            },
+            "agentWinSolo": {
+                "Hans": 1,
+                "Yumi": 2,
+                "Octo": 7,
+                "Cavaliere": 32,
+                "Chavez": 5,
+                "Larcin": 9,
+                "Sasori": 3,
+                "Squire": 15,
+                "Ace": 21,
+                "Xiu": 29,
+                "Red": 2,
+                "Vigil": 1
+            },
+            "agentWinTrio": {
+                "Hans": 22,
+                "Yumi": 7,
+                "Octo": 2,
+                "Cavaliere": 91,
+                "Chavez": 21,
+                "Larcin": 5,
+                "Ace": 39,
+                "Xiu": 39,
+                "Red": 28,
+                "Vigil": 2
+            },
+            "deathsSolo": 352,
+            "deathsTrio": 478,
+            "eliminationsSolo": 706,
+            "eliminationsTrio": 971,
+            "gadgetPickSolo": {
+                "BounceMat": 18,
+                "SpyGlass": 292,
+                "GooPod": 2,
+                "HackTrap": 8,
+                "Drone": 2,
+                "Scrambler": 2,
+                "RemoteTurret": 3,
+                "Mimic": 6,
+                "Tripwire": 253
+            },
+            "gadgetPickTrio": {
+                "BounceMat": 45,
+                "SpyGlass": 349,
+                "HackTrap": 7,
+                "Drone": 5,
+                "Scrambler": 2,
+                "RemoteTurret": 1,
+                "Mimic": 42,
+                "Tripwire": 271
+            },
+            "matchesPlayedSolo": 493,
+            "matchesPlayedTrio": 535,
+            "matchesWonSolo": 127,
+            "matchesWonTrio": 256,
+            "passivePickSolo": {
+                "Hans_Mod2": 4,
+                "Vigil_Mod1": 4,
+                "Vigil_Mod2": 1,
+                "Yumi_Mod2": 8,
+                "Ace_Default": 55,
+                "Sasori_Mod1": 17,
+                "Ace_Mod1": 9,
+                "Squire_Mod2": 15,
+                "Sasori_Default": 3,
+                "Squire_Default": 23,
+                "Yumi_Default": 3,
+                "Octo_Default": 17,
+                "Xiu_Default": 113,
+                "Cavaliere_Mod1": 18,
+                "Vigil_Default": 3
+            },
+            "passivePickTrio": {
+                "Hans_Mod2": 26,
+                "Red_Default": 11,
+                "Ace_Default": 46,
+                "Ace_Mod1": 11,
+                "Ace_Mod2": 1,
+                "Sasori_Default": 1,
+                "Squire_Default": 1,
+                "Yumi_Default": 28,
+                "Octo_Default": 1,
+                "Cavaliere_Mod1": 118,
+                "Xiu_Default": 83,
+                "Vigil_Default": 5,
+                "Hans_Default": 14,
+                "Red_Mod2": 2,
+                "Xiu_Mod2": 4,
+                "Octo_Mod2": 4,
+                "Larcin_Mod2": 5
+            },
+            "timePlayedSolo": 297038,
+            "timePlayedTrio": 302541,
+            "weaponPickSolo": {
+                "Sasori_Default": 3,
+                "Ace_Mod1": 55,
+                "Cavaliere_Mod2": 18,
+                "Squire_Mod2": 8,
+                "Yumi_Default": 8,
+                "Sasori_Mod1": 17,
+                "Ace_Default": 9,
+                "Yumi_Mod2": 2,
+                "Vigil_Mod1": 8,
+                "Yumi_Mod1": 1,
+                "Octo_Mod1": 12,
+                "Xiu_Mod2": 91,
+                "Octo_Default": 5,
+                "Xiu_Default": 22,
+                "Squire_Default": 30,
+                "Hans_Mod1": 4
+            },
+            "weaponPickTrio": {
+                "Cavaliere_Default": 2,
+                "Sasori_Default": 1,
+                "Cavaliere_Mod2": 116,
+                "Ace_Mod1": 47,
+                "Yumi_Default": 18,
+                "Red_Default": 11,
+                "Ace_Default": 11,
+                "Hans_Default": 15,
+                "Yumi_Mod2": 7,
+                "Vigil_Mod1": 3,
+                "Red_Mod2": 2,
+                "Yumi_Mod1": 3,
+                "Octo_Mod1": 2,
+                "Octo_Mod2": 3,
+                "Vigil_Mod2": 2,
+                "Xiu_Mod2": 56,
+                "Larcin_Mod1": 5,
+                "Xiu_Default": 31,
+                "Hans_Mod2": 11,
+                "Squire_Default": 1,
+                "Hans_Mod1": 14
+            },
+            "activePickDuo": {
+                "Ace_Mod1": 5,
+                "Octo_Mod1": 10,
+                "Octo_Mod2": 10,
+                "Cavaliere_Default": 45,
+                "Vigil_Default": 3,
+                "Yumi_Mod1": 5,
+                "Sasori_Default": 4,
+                "Xiu_Mod2": 27,
+                "Cavaliere_Mod2": 80,
+                "Sasori_Mod1": 27
+            },
+            "agentPickDuo": {
+                "Yumi": 5,
+                "Octo": 20,
+                "Cavaliere": 125,
+                "Sasori": 31,
+                "Xiu": 27,
+                "Ace": 5,
+                "Vigil": 3
+            },
+            "agentWinDuo": {
+                "Sasori": 1,
+                "Xiu": 10,
+                "Octo": 7,
+                "Cavaliere": 39,
+                "Vigil": 2
+            },
+            "deathsDuo": 171,
+            "eliminationsDuo": 389,
+            "gadgetPickDuo": {
+                "BounceMat": 6,
+                "SpyGlass": 216,
+                "GooPod": 1,
+                "HackTrap": 18,
+                "Tripwire": 191
+            },
+            "matchesPlayedDuo": 216,
+            "matchesWonDuo": 90,
+            "passivePickDuo": {
+                "Sasori_Default": 1,
+                "Yumi_Default": 5,
+                "Octo_Default": 12,
+                "Cavaliere_Mod1": 125,
+                "Xiu_Default": 4,
+                "Vigil_Default": 3,
+                "Xiu_Mod1": 2,
+                "Xiu_Mod2": 21,
+                "Octo_Mod2": 8,
+                "Sasori_Mod1": 30,
+                "Ace_Mod2": 5
+            },
+            "timePlayedDuo": 108485,
+            "weaponPickDuo": {
+                "Cavaliere_Default": 1,
+                "Sasori_Default": 6,
+                "Cavaliere_Mod2": 124,
+                "Ace_Mod1": 5,
+                "Sasori_Mod1": 25,
+                "Yumi_Mod1": 5,
+                "Octo_Mod1": 14,
+                "Octo_Mod2": 1,
+                "Xiu_Mod2": 16,
+                "Octo_Default": 5,
+                "Xiu_Mod1": 1,
+                "Vigil_Default": 3,
+                "Xiu_Default": 10
+            }
+        },
+        "seasonOne": {
+            "agentPlayTime": {
+                "Hans": 23434,
+                "Yumi": 13997,
+                "Cavaliere": 4169,
+                "Larcin": 1976,
+                "Squire": 18703,
+                "Ace": 59471,
+                "Xiu": 102225,
+                "Red": 7709
+            },
+            "activePickSolo": {
+                "Ace_Mod1": 64,
+                "Xiu_Default": 28,
+                "Squire_Mod1": 25,
+                "Hans_Mod2": 4,
+                "Squire_Mod2": 1,
+                "Yumi_Default": 8,
+                "Cavaliere_Default": 1,
+                "Squire_Default": 12,
+                "Cavaliere_Mod1": 1,
+                "Xiu_Mod2": 84,
+                "Cavaliere_Mod2": 1
+            },
+            "activePickTrio": {
+                "Ace_Mod1": 56,
+                "Xiu_Default": 33,
+                "Hans_Mod2": 17,
+                "Yumi_Default": 8,
+                "Red_Default": 2,
+                "Red_Mod1": 11,
+                "Hans_Default": 23,
+                "Squire_Default": 1,
+                "Yumi_Mod1": 13,
+                "Larcin_Default": 5,
+                "Xiu_Mod2": 49,
+                "Cavaliere_Mod2": 5
+            },
+            "agentPickSolo": {
+                "Squire": 38,
+                "Ace": 64,
+                "Hans": 4,
+                "Xiu": 112,
+                "Yumi": 8,
+                "Cavaliere": 3
+            },
+            "agentPickTrio": {
+                "Hans": 40,
+                "Yumi": 21,
+                "Cavaliere": 5,
+                "Larcin": 5,
+                "Squire": 1,
+                "Ace": 56,
+                "Xiu": 82,
+                "Red": 13
+            },
+            "agentWinSolo": {
+                "Squire": 15,
+                "Xiu": 28,
+                "Ace": 20,
+                "Yumi": 2,
+                "Cavaliere": 2
+            },
+            "agentWinTrio": {
+                "Hans": 22,
+                "Yumi": 4,
+                "Cavaliere": 1,
+                "Larcin": 1,
+                "Ace": 35,
+                "Xiu": 37,
+                "Red": 5
+            },
+            "deathsSolo": 154,
+            "deathsTrio": 204,
+            "eliminationsSolo": 377,
+            "eliminationsTrio": 390,
+            "gadgetPickSolo": {
+                "BounceMat": 18,
+                "SpyGlass": 228,
+                "Drone": 2,
+                "Scrambler": 2,
+                "RemoteTurret": 3,
+                "Mimic": 6,
+                "Tripwire": 199
+            },
+            "gadgetPickTrio": {
+                "BounceMat": 41,
+                "SpyGlass": 211,
+                "HackTrap": 2,
+                "Drone": 4,
+                "Scrambler": 1,
+                "RemoteTurret": 1,
+                "Mimic": 42,
+                "Tripwire": 144
+            },
+            "matchesPlayedSolo": 229,
+            "matchesPlayedTrio": 223,
+            "matchesWonSolo": 67,
+            "matchesWonTrio": 105,
+            "passivePickSolo": {
+                "Hans_Mod2": 4,
+                "Squire_Default": 23,
+                "Yumi_Default": 2,
+                "Xiu_Default": 112,
+                "Cavaliere_Mod1": 3,
+                "Yumi_Mod2": 6,
+                "Ace_Default": 55,
+                "Ace_Mod1": 9,
+                "Squire_Mod2": 15
+            },
+            "passivePickTrio": {
+                "Hans_Mod2": 26,
+                "Squire_Default": 1,
+                "Yumi_Default": 21,
+                "Cavaliere_Mod1": 5,
+                "Xiu_Default": 82,
+                "Red_Default": 11,
+                "Hans_Default": 14,
+                "Ace_Default": 45,
+                "Red_Mod2": 2,
+                "Ace_Mod1": 11,
+                "Larcin_Mod2": 5
+            },
+            "timePlayedSolo": 112732,
+            "timePlayedTrio": 118952,
+            "weaponPickSolo": {
+                "Ace_Default": 9,
+                "Xiu_Mod2": 90,
+                "Ace_Mod1": 55,
+                "Cavaliere_Mod2": 3,
+                "Squire_Mod2": 8,
+                "Yumi_Default": 8,
+                "Xiu_Default": 22,
+                "Squire_Default": 30,
+                "Hans_Mod1": 4
+            },
+            "weaponPickTrio": {
+                "Cavaliere_Default": 1,
+                "Cavaliere_Mod2": 4,
+                "Ace_Mod1": 45,
+                "Yumi_Default": 14,
+                "Red_Default": 11,
+                "Ace_Default": 11,
+                "Hans_Default": 15,
+                "Yumi_Mod2": 7,
+                "Red_Mod2": 2,
+                "Xiu_Mod2": 55,
+                "Larcin_Mod1": 5,
+                "Xiu_Default": 27,
+                "Hans_Mod2": 11,
+                "Squire_Default": 1,
+                "Hans_Mod1": 14
+            },
+            "activePickDuo": {},
+            "agentPickDuo": {},
+            "agentWinDuo": {},
+            "gadgetPickDuo": {},
+            "passivePickDuo": {},
+            "weaponPickDuo": {}
+        },
+        "seasonTwo": {
+            "agentPlayTime": {
+                "Sasori": 22727,
+                "Ace": 2266,
+                "Xiu": 3056,
+                "Yumi": 6998,
+                "Cavaliere": 32345
+            },
+            "activePickSolo": {
+                "Yumi_Mod1": 3,
+                "Sasori_Default": 3,
+                "Xiu_Mod2": 1,
+                "Sasori_Mod1": 17,
+                "Cavaliere_Mod2": 5
+            },
+            "activePickTrio": {
+                "Cavaliere_Default": 3,
+                "Yumi_Mod1": 7,
+                "Ace_Mod1": 2,
+                "Sasori_Default": 1,
+                "Xiu_Mod2": 1,
+                "Cavaliere_Mod2": 9
+            },
+            "agentPickSolo": {
+                "Sasori": 20,
+                "Xiu": 1,
+                "Yumi": 3,
+                "Cavaliere": 5
+            },
+            "agentPickTrio": {
+                "Sasori": 1,
+                "Ace": 2,
+                "Xiu": 1,
+                "Yumi": 7,
+                "Cavaliere": 12
+            },
+            "agentWinSolo": {
+                "Xiu": 1,
+                "Sasori": 3,
+                "Cavaliere": 1
+            },
+            "agentWinTrio": {
+                "Yumi": 1,
+                "Cavaliere": 9
+            },
+            "deathsSolo": 23,
+            "deathsTrio": 24,
+            "eliminationsSolo": 41,
+            "eliminationsTrio": 40,
+            "gadgetPickSolo": {
+                "Tripwire": 27,
+                "SpyGlass": 29,
+                "GooPod": 2
+            },
+            "gadgetPickTrio": {
+                "BounceMat": 3,
+                "SpyGlass": 23,
+                "Drone": 1,
+                "Tripwire": 18,
+                "Scrambler": 1
+            },
+            "matchesPlayedSolo": 29,
+            "matchesPlayedTrio": 23,
+            "matchesWonSolo": 5,
+            "matchesWonTrio": 10,
+            "passivePickSolo": {
+                "Sasori_Default": 3,
+                "Yumi_Mod2": 2,
+                "Yumi_Default": 1,
+                "Sasori_Mod1": 17,
+                "Xiu_Default": 1,
+                "Cavaliere_Mod1": 5
+            },
+            "passivePickTrio": {
+                "Sasori_Default": 1,
+                "Yumi_Default": 7,
+                "Ace_Default": 1,
+                "Cavaliere_Mod1": 12,
+                "Xiu_Default": 1,
+                "Ace_Mod2": 1
+            },
+            "timePlayedSolo": 14772,
+            "timePlayedTrio": 12628,
+            "weaponPickSolo": {
+                "Yumi_Mod2": 2,
+                "Yumi_Mod1": 1,
+                "Sasori_Default": 3,
+                "Xiu_Mod2": 1,
+                "Cavaliere_Mod2": 5,
+                "Sasori_Mod1": 17
+            },
+            "weaponPickTrio": {
+                "Yumi_Mod1": 3,
+                "Cavaliere_Default": 1,
+                "Sasori_Default": 1,
+                "Xiu_Mod2": 1,
+                "Cavaliere_Mod2": 11,
+                "Ace_Mod1": 2,
+                "Yumi_Default": 4
+            },
+            "activePickDuo": {
+                "Yumi_Mod1": 5,
+                "Ace_Mod1": 3,
+                "Sasori_Default": 4,
+                "Xiu_Mod2": 4,
+                "Cavaliere_Mod2": 43,
+                "Sasori_Mod1": 22
+            },
+            "agentPickDuo": {
+                "Sasori": 26,
+                "Xiu": 4,
+                "Ace": 3,
+                "Yumi": 5,
+                "Cavaliere": 43
+            },
+            "agentWinDuo": {},
+            "deathsDuo": 62,
+            "eliminationsDuo": 129,
+            "gadgetPickDuo": {
+                "BounceMat": 1,
+                "SpyGlass": 81,
+                "HackTrap": 2,
+                "Tripwire": 78
+            },
+            "matchesPlayedDuo": 81,
+            "matchesWonDuo": 31,
+            "passivePickDuo": {
+                "Yumi_Default": 5,
+                "Sasori_Mod1": 26,
+                "Cavaliere_Mod1": 43,
+                "Xiu_Default": 4,
+                "Ace_Mod2": 3
+            },
+            "timePlayedDuo": 39992,
+            "weaponPickDuo": {
+                "Yumi_Mod1": 5,
+                "Cavaliere_Default": 1,
+                "Xiu_Mod2": 4,
+                "Sasori_Default": 5,
+                "Cavaliere_Mod2": 42,
+                "Ace_Mod1": 3,
+                "Sasori_Mod1": 21
+            }
+        },
+        "seasonThree": {
+            "agentPlayTime": {
+                "Sasori": 1522,
+                "Xiu": 6130,
+                "Ace": 287,
+                "Octo": 19744,
+                "Cavaliere": 75438
+            },
+            "activePickSolo": {
+                "Octo_Mod1": 17,
+                "Cavaliere_Default": 2,
+                "Cavaliere_Mod2": 6
+            },
+            "activePickTrio": {
+                "Cavaliere_Default": 16,
+                "Xiu_Mod2": 4,
+                "Octo_Mod1": 1,
+                "Cavaliere_Mod2": 69,
+                "Octo_Mod2": 4
+            },
+            "agentPickSolo": {
+                "Octo": 17,
+                "Cavaliere": 8
+            },
+            "agentPickTrio": {
+                "Xiu": 4,
+                "Octo": 5,
+                "Cavaliere": 85
+            },
+            "agentWinSolo": {
+                "Octo": 7,
+                "Cavaliere": 2
+            },
+            "agentWinTrio": {
+                "Xiu": 2,
+                "Octo": 2,
+                "Cavaliere": 52
+            },
+            "deathsSolo": 16,
+            "deathsTrio": 72,
+            "eliminationsSolo": 55,
+            "eliminationsTrio": 250,
+            "gadgetPickSolo": {
+                "Tripwire": 25,
+                "SpyGlass": 25
+            },
+            "gadgetPickTrio": {
+                "BounceMat": 1,
+                "Tripwire": 93,
+                "SpyGlass": 94
+            },
+            "matchesPlayedSolo": 25,
+            "matchesPlayedTrio": 94,
+            "matchesWonSolo": 9,
+            "matchesWonTrio": 56,
+            "passivePickSolo": {
+                "Octo_Default": 17,
+                "Cavaliere_Mod1": 8
+            },
+            "passivePickTrio": {
+                "Xiu_Mod2": 4,
+                "Octo_Mod2": 4,
+                "Octo_Default": 1,
+                "Cavaliere_Mod1": 85
+            },
+            "timePlayedSolo": 12225,
+            "timePlayedTrio": 50144,
+            "weaponPickSolo": {
+                "Octo_Default": 5,
+                "Octo_Mod1": 12,
+                "Cavaliere_Mod2": 8
+            },
+            "weaponPickTrio": {
+                "Octo_Mod1": 2,
+                "Octo_Mod2": 3,
+                "Xiu_Default": 4,
+                "Cavaliere_Mod2": 85
+            },
+            "activePickDuo": {
+                "Ace_Mod1": 1,
+                "Octo_Mod1": 8,
+                "Octo_Mod2": 9,
+                "Cavaliere_Default": 15,
+                "Xiu_Mod2": 7,
+                "Cavaliere_Mod2": 37,
+                "Sasori_Mod1": 3
+            },
+            "agentPickDuo": {
+                "Sasori": 3,
+                "Xiu": 7,
+                "Ace": 1,
+                "Octo": 17,
+                "Cavaliere": 52
+            },
+            "agentWinDuo": {
+                "Xiu": 3,
+                "Octo": 7,
+                "Cavaliere": 20
+            },
+            "deathsDuo": 73,
+            "eliminationsDuo": 163,
+            "gadgetPickDuo": {
+                "Tripwire": 80,
+                "SpyGlass": 80
+            },
+            "matchesPlayedDuo": 80,
+            "matchesWonDuo": 30,
+            "passivePickDuo": {
+                "Xiu_Mod2": 7,
+                "Octo_Mod2": 5,
+                "Sasori_Mod1": 3,
+                "Octo_Default": 12,
+                "Cavaliere_Mod1": 52,
+                "Ace_Mod2": 1
+            },
+            "timePlayedDuo": 40752,
+            "weaponPickDuo": {
+                "Octo_Mod1": 14,
+                "Octo_Mod2": 1,
+                "Octo_Default": 2,
+                "Cavaliere_Mod2": 52,
+                "Ace_Mod1": 1,
+                "Xiu_Default": 7,
+                "Sasori_Mod1": 3
+            }
+        },
+        "seasonFour": {
+            "agentPlayTime": {
+                "Sasori": 1408,
+                "Xiu": 6607,
+                "Ace": 373,
+                "Octo": 1099,
+                "Cavaliere": 24580,
+                "Vigil": 8141
+            },
+            "activePickSolo": {
+                "Cavaliere_Default": 2,
+                "Vigil_Default": 3,
+                "Vigil_Mod2": 1,
+                "Vigil_Mod1": 4
+            },
+            "activePickTrio": {
+                "Cavaliere_Default": 16,
+                "Vigil_Default": 4,
+                "Vigil_Mod2": 1
+            },
+            "agentPickSolo": {
+                "Vigil": 8,
+                "Cavaliere": 2
+            },
+            "agentPickTrio": {
+                "Vigil": 5,
+                "Cavaliere": 16
+            },
+            "agentWinSolo": {
+                "Vigil": 1,
+                "Cavaliere": 2
+            },
+            "agentWinTrio": {
+                "Vigil": 2,
+                "Cavaliere": 12
+            },
+            "deathsSolo": 7,
+            "deathsTrio": 19,
+            "eliminationsSolo": 12,
+            "eliminationsTrio": 42,
+            "gadgetPickSolo": {
+                "HackTrap": 8,
+                "Tripwire": 2,
+                "SpyGlass": 10
+            },
+            "gadgetPickTrio": {
+                "HackTrap": 5,
+                "Tripwire": 16,
+                "SpyGlass": 21
+            },
+            "matchesPlayedSolo": 10,
+            "matchesPlayedTrio": 21,
+            "matchesWonSolo": 3,
+            "matchesWonTrio": 14,
+            "passivePickSolo": {
+                "Vigil_Default": 3,
+                "Vigil_Mod1": 4,
+                "Vigil_Mod2": 1,
+                "Cavaliere_Mod1": 2
+            },
+            "passivePickTrio": {
+                "Vigil_Default": 5,
+                "Cavaliere_Mod1": 16
+            },
+            "timePlayedSolo": 4680,
+            "timePlayedTrio": 9787,
+            "weaponPickSolo": {
+                "Vigil_Mod1": 8,
+                "Cavaliere_Mod2": 2
+            },
+            "weaponPickTrio": {
+                "Vigil_Mod1": 3,
+                "Cavaliere_Mod2": 16,
+                "Vigil_Mod2": 2
+            },
+            "activePickDuo": {
+                "Ace_Mod1": 1,
+                "Octo_Mod1": 2,
+                "Octo_Mod2": 1,
+                "Cavaliere_Default": 30,
+                "Vigil_Default": 3,
+                "Xiu_Mod2": 16,
+                "Sasori_Mod1": 2
+            },
+            "agentPickDuo": {
+                "Sasori": 2,
+                "Xiu": 16,
+                "Ace": 1,
+                "Octo": 3,
+                "Cavaliere": 30,
+                "Vigil": 3
+            },
+            "agentWinDuo": {
+                "Sasori": 1,
+                "Xiu": 7,
+                "Cavaliere": 19,
+                "Vigil": 2
+            },
+            "deathsDuo": 36,
+            "eliminationsDuo": 97,
+            "gadgetPickDuo": {
+                "BounceMat": 5,
+                "SpyGlass": 55,
+                "GooPod": 1,
+                "HackTrap": 16,
+                "Tripwire": 33
+            },
+            "matchesPlayedDuo": 55,
+            "matchesWonDuo": 29,
+            "passivePickDuo": {
+                "Sasori_Default": 1,
+                "Cavaliere_Mod1": 30,
+                "Vigil_Default": 3,
+                "Xiu_Mod1": 2,
+                "Octo_Mod2": 3,
+                "Xiu_Mod2": 14,
+                "Sasori_Mod1": 1,
+                "Ace_Mod2": 1
+            },
+            "timePlayedDuo": 27741,
+            "weaponPickDuo": {
+                "Xiu_Mod2": 12,
+                "Sasori_Default": 1,
+                "Octo_Default": 3,
+                "Xiu_Mod1": 1,
+                "Cavaliere_Mod2": 30,
+                "Ace_Mod1": 1,
+                "Vigil_Default": 3,
+                "Xiu_Default": 3,
+                "Sasori_Mod1": 1
+            }
+        }
+    }
+}

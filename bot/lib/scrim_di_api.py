@@ -1,7 +1,7 @@
 import asyncio, json, aiohttp
 from datetime import datetime, timedelta, timezone
 from typing import Union, List
-from DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
+from lib.DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
 
 oauth_url: str = "https://community-auth.auth.us-east-1.amazoncognito.com/oauth2/token"
 api_base_url: str = "https://1gy5zni8ll.execute-api.us-east-1.amazonaws.com/community/game/deceiveinc"
@@ -104,23 +104,10 @@ class ScrimDiAPI:
                 elif e.status == 404: # User not found
                     raise DeceiveIncApiResponseError(e.status, f"The user with Sweet ID {sweet_id} was not found.")
             data = await response.json()
-            print(data)
+            print(json.dumps(data))
             return SweetUser(sweet_id, data["displayName"],
                              data["notASkillRank"],
                              data["progression"]["Account"]["level"] if not None else None)
     
     async def upgrade_user_partial(self, user_partial: SweetUserPartial) -> SweetUser:
         return await self.get_user(user_partial.sweet_id)
-    
-async def main():
-    api = await ScrimDiAPI.initialize("7ju2ptnjudbajq5v7shpbkkd9s", "afckj5lmdfoq8phlki0cckqru69oabb5ij0u870jo5vbnas29rh")
-    user_search = await api.search_users("HatBun")
-    user_partial = user_search[0] if len(user_search) > 0 else None
-    print(str(user_partial))
-    # user = await api.get_user(user_partial.sweet_id) if type(user_partial) is not None else None
-    user = await api.get_user("mil20087-4j15-6l00-1ih1-j698i9372j78")
-    print(str(user))
-
-if __name__ == "__main__":
-    asyncio.run(main())
-    
