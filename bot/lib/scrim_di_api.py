@@ -6,13 +6,13 @@ from lib.DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
 oauth_url: str = "https://community-auth.auth.us-east-1.amazoncognito.com/oauth2/token"
 api_base_url: str = "https://1gy5zni8ll.execute-api.us-east-1.amazonaws.com/community/game/deceiveinc"
 
-class DeceiveIncApiResponseError(Exception):
+class DeceiveIncAPIResponseError(Exception):
     def __init__(self, status: int, message: str):
         self.status = status
         self.message = message
         super().__init__(f"DeceiveInc API returned status {status}: {message}")
 
-class ScrimDiAPI:
+class DeceiveIncAPIClient:
     _session: aiohttp.ClientSession
     _access_token: str
     _token_expiration_time: datetime
@@ -63,8 +63,8 @@ class ScrimDiAPI:
     # API functions
 
     @staticmethod
-    async def initialize(client_id: str, client_secret: str) -> "ScrimDiAPI":
-        out = ScrimDiAPI(client_id, client_secret)
+    async def initialize(client_id: str, client_secret: str) -> "DeceiveIncAPIClient":
+        out = DeceiveIncAPIClient(client_id, client_secret)
         await out._refresh_access_token()
         return out
     
@@ -80,7 +80,7 @@ class ScrimDiAPI:
             except aiohttp.ClientResponseError as e:
                 if e.status == 401: # The token needs to be refreshed and tried again
                     if retry: # If we've already tried refreshing the token, raise the error
-                        raise DeceiveIncApiResponseError(e.status, "The access token is invalid.")
+                        raise DeceiveIncAPIResponseError(e.status, "The access token is invalid.")
                     await self._refresh_access_token()
                     return await self.search_users(query, True)
             data = await response.json()
@@ -95,14 +95,14 @@ class ScrimDiAPI:
                 response.raise_for_status()
             except aiohttp.ClientResponseError as e:
                 if e.status == 400: # Invalid sweet ID
-                    raise DeceiveIncApiResponseError(e.status, f"The provided Sweet ID {sweet_id} is invalid.")
+                    raise DeceiveIncAPIResponseError(e.status, f"The provided Sweet ID {sweet_id} is invalid.")
                 elif e.status == 401: # The token needs to be refreshed and tried again
                     if retry: # If we've already tried refreshing the token, throw error
-                        raise DeceiveIncApiResponseError(e.status, "The access token is invalid.")
+                        raise DeceiveIncAPIResponseError(e.status, "The access token is invalid.")
                     await self._refresh_access_token()
                     return await self.get_user(sweet_id, True)
                 elif e.status == 404: # User not found
-                    raise DeceiveIncApiResponseError(e.status, f"The user with Sweet ID {sweet_id} was not found.")
+                    raise DeceiveIncAPIResponseError(e.status, f"The user with Sweet ID {sweet_id} was not found.")
             data = await response.json()
             print(json.dumps(data))
             return SweetUser(sweet_id, data["displayName"],

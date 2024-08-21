@@ -36,7 +36,7 @@ print("Here")
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    api = await scrim_di_api.ScrimDiAPI.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET"))
+    api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET"))
     print(await api.search_users("lunarecklipse"))
     print(await api.get_user("mil20087-4j15-6l00-1ih1-j698i9372j78"))
     print("Here")
