@@ -111,16 +111,3 @@ class ScrimDiAPI:
     
     async def upgrade_user_partial(self, user_partial: SweetUserPartial) -> SweetUser:
         return await self.get_user(user_partial.sweet_id)
-    
-async def main():
-    api = await ScrimDiAPI.initialize("7ju2ptnjudbajq5v7shpbkkd9s", "afckj5lmdfoq8phlki0cckqru69oabb5ij0u870jo5vbnas29rh")
-    user_search = await api.search_users("HatBun")
-    user_partial = user_search[0] if len(user_search) > 0 else None
-    print(str(user_partial))
-    # user = await api.get_user(user_partial.sweet_id) if type(user_partial) is not None else None
-    user = await api.get_user("mil20087-4j15-6l00-1ih1-j698i9372j78")
-    print(str(user))
-
-if __name__ == "__main__":
-    asyncio.run(main())
-    
