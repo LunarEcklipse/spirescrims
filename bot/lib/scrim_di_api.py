@@ -1,7 +1,7 @@
 import asyncio, json, aiohttp
 from datetime import datetime, timedelta, timezone
 from typing import Union, List
-from DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
+from lib.DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
 
 oauth_url: str = "https://community-auth.auth.us-east-1.amazoncognito.com/oauth2/token"
 api_base_url: str = "https://1gy5zni8ll.execute-api.us-east-1.amazonaws.com/community/game/deceiveinc"
@@ -104,7 +104,7 @@ class ScrimDiAPI:
                 elif e.status == 404: # User not found
                     raise DeceiveIncApiResponseError(e.status, f"The user with Sweet ID {sweet_id} was not found.")
             data = await response.json()
-            print(data)
+            print(json.dumps(data))
             return SweetUser(sweet_id, data["displayName"],
                              data["notASkillRank"],
                              data["progression"]["Account"]["level"] if not None else None)

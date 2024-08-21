@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from discord.commands import Option
 import lib.scrim_reader as scrim_reader
 import lib.scrim_sysinfo as scrim_sysinfo
+import lib.scrim_di_api as scrim_di_api
 
 scrims_version: str = "1.0.0"
 
@@ -35,5 +36,8 @@ print("Here")
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-
+    api = await scrim_di_api.ScrimDiAPI.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET"))
+    print(await api.search_users("lunarecklipse"))
+    print(await api.get_user("mil20087-4j15-6l00-1ih1-j698i9372j78"))
+    print("Here")
 bot.run(os.getenv('DISCORD_BOT_TOKEN')) # Get the token from the .env file
