@@ -1,6 +1,8 @@
-from typing import Union, List
+from typing import Union, List, Dict
 import re
 from enum import StrEnum
+from word2number import w2n
+from lib.DI_API_Obj.gamemode_counter import GamemodeCounter
 
 class ItemSlot(StrEnum):
     DEFAULT = "Default"
@@ -8,23 +10,14 @@ class ItemSlot(StrEnum):
     MOD2 = "Mod2"
 
 class AgentTimelineStats:
-    '''Wraps both lifetime and seasonal statistics for an agent.'''
+    '''Wraps both lifetime and seasonal statistics for an agent, as well as their progression data.'''
+    agent_name: str
     playtime_seconds: int
-    pick_count_solo: int
-    pick_count_duo: int
-    pick_count_trio: int
-    win_count_solo: int
-    win_count_duo: int
-    win_count_trio: int
-    weapon_pick_solo: dict
-    weapon_pick_duo: dict
-    weapon_pick_trio: dict
-    passive_pick_solo: dict
-    passive_pick_duo: dict
-    passive_pick_trio: dict
-    active_pick_solo: dict
-    active_pick_duo: dict
-    active_pick_trio: dict
+    pick_count: GamemodeCounter
+    win_count: GamemodeCounter
+    weapon_pick_count: Dict[str, GamemodeCounter]
+    passive_pick_count: Dict[str, GamemodeCounter]
+    active_pick_count: Dict[str, GamemodeCounter]
 
     @staticmethod
     def wrap_item_pick_dictionary(item_slot: ItemSlot, item_name: str, pick_count: int) -> dict:
@@ -50,3 +43,34 @@ class AgentStats:
 
     lifetime_stats: AgentTimelineStats
     seasonal_stats: dict
+
+    @staticmethod
+    def parse_season_number(season_str: str) -> Union[int, None]:
+        '''Parses the season number from the season string.'''
+        # Seasons are formatted in camelcase with the season number as text at the end (e.g. "seasonFour")
+        pattern = re.compile(r'season([A-Za-z]+)')
+        match = pattern.search(season_str)
+        if match is None:
+            return None
+        return w2n.word_to_num(match.group(1).lower())
+    
+    def add_season_stats_to_dict(self, season_str: str, stats: AgentTimelineStats) -> None:
+        '''Adds the season statistics to the seasonal stats dictionary.'''
+        season_num = AgentStats.parse_season_number(season_str)
+        if season_num is None:
+            return
+        self.seasonal_stats[season_num] = stats
+
+    def __init__(self,
+                 agent_name: str,
+                 mastery_level: int,
+                 echelon_level: int,
+                 lifetime_stats: AgentTimelineStats,
+                 seasonal_stats: dict = {}):
+        self.agent_name = agent_name
+        self.mastery_level = mastery_level
+        self.echelon_level = echelon_level
+        self.lifetime_stats = lifetime_stats
+        self.seasonal_stats = seasonal_stats
+
+    
