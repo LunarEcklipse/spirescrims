@@ -39,7 +39,8 @@ class MatchScore:
         self.last_spy_standing = last_spy_standing
         self.extracted = extracted
 
-    def _get_elimination_score(self) -> Union[str, None]:
+    def _get_elimination_score_formatted(self) -> Union[str, None]:
+        '''Returns the Elimination score as a formatted string.'''
         match self.eliminations:
             case 0:
                 return None
@@ -48,10 +49,12 @@ class MatchScore:
             case _:
                 return f'{self.eliminations} Eliminations: {self.eliminations}'
     
-    def _get_vault_entered_score(self) -> Union[str, None]:
+    def _get_vault_entered_score_formatted(self) -> Union[str, None]:
+        '''Returns the Vault Entered score as a formatted string.'''
         return 'Vault Entered: 1' if self.vault_entered else None
     
-    def _print_vault_terminals_disabled_score(self) -> Union[str, None]:
+    def _get_vault_terminals_disabled_score_formatted(self) -> Union[str, None]:
+        '''Returns the Vault Terminals Disabled score as a formatted string.'''
         match self.vault_terminals_disabled:
             case 0:
                 return None
@@ -60,7 +63,8 @@ class MatchScore:
             case _:
                 return f'{self.vault_terminals_disabled} Vault Terminals Disabled: {self.vault_terminals_disabled}'
 
-    def _print_allies_revived_score(self) -> Union[str, None]:
+    def _get_allies_revived_score_formatted(self) -> Union[str, None]:
+        '''Returns the Allies Revived score as a formatted string.'''
         match self.allies_revived:
             case 0:
                 return None
@@ -69,27 +73,36 @@ class MatchScore:
             case _:
                 return f'{self.allies_revived} Allies Revived: -{self.allies_revived}'
 
-    def _print_last_spy_standing_score(self) -> Union[str, None]:
+    def _get_last_spy_standing_score_formatted(self) -> Union[str, None]:
+        '''Returns the Last Spy Standing score as a formatted string.'''
         return 'Last Spy Standing: 4' if self.last_spy_standing else None
 
     def _print_extracted_score(self) -> Union[str, None]:
+        '''Returns the Extracted score as a formatted string.'''
         return 'Extracted: 4' if self.extracted else None
 
+    def has_no_score_events(self) -> bool:
+        '''Returns whether the MatchScore has no score-affecting events.'''
+        return self.eliminations == 0 and self.vault_terminals_disabled == 0 and self.allies_revived == 0 and not self.vault_entered and not self.last_spy_standing and not self.extract
+    
+    def __repr__(self) -> str:
+        return f"MatchScore(total_score={self.total_score}, eliminations={self.eliminations}, vault_terminals_disabled={self.vault_terminals_disabled}, allies_revived={self.allies_revived}, vault_entered={self.vault_entered}, last_spy_standing={self.last_spy_standing}, extracted={self.extracted})"
+    
     def __str__(self) -> str:
         out = f"**Estimated Score:** {self.total_score}"
-        if self.score == 0 and self.allies_revived == 0:
+        if self.has_no_score_events():
             return out
         out += "\n## Rationale\n"
         if self.eliminations > 0:
-            out += f"* {self._get_elimination_score()}\n"
+            out += f"* {self._get_elimination_score_formatted()}\n"
         if self.vault_entered:
-            out += f"* {self._get_vault_entered_score()}\n"
+            out += f"* {self._get_vault_entered_score_formatted()}\n"
         if self.vault_terminals_disabled > 0:
-            out += f"* {self._print_vault_terminals_disabled_score()}\n"
+            out += f"* {self._get_vault_terminals_disabled_score_formatted()}\n"
         if self.allies_revived > 0:
-            out += f"* {self._print_allies_revived_score()}\n"
+            out += f"* {self._get_allies_revived_score_formatted()}\n"
         if self.last_spy_standing:
-            out += f"* {self._print_last_spy_standing_score()}\n"
+            out += f"* {self._get_last_spy_standing_score_formatted()}\n"
         if self.extracted:
             out += f"* {self._print_extracted_score()}\n"
         return out
@@ -99,18 +112,19 @@ class MatchScore:
         emb.set_author(name="Scoreboard Analysis")
         embed_str: str = ""
         if self.eliminations > 0:
-            embed_str += f"* {self._get_elimination_score()}\n"
+            embed_str += f"* {self._get_elimination_score_formatted()}\n"
         if self.vault_entered:
-            embed_str += f"* {self._get_vault_entered_score()}\n"
+            embed_str += f"* {self._get_vault_entered_score_formatted()}\n"
         if self.vault_terminals_disabled > 0:
-            embed_str += f"* {self._print_vault_terminals_disabled_score()}\n"
+            embed_str += f"* {self._get_vault_terminals_disabled_score_formatted()}\n"
         if self.allies_revived > 0:
-            embed_str += f"* {self._print_allies_revived_score()}\n"
+            embed_str += f"* {self._get_allies_revived_score_formatted()}\n"
         if self.last_spy_standing:
-            embed_str += f"* {self._print_last_spy_standing_score()}\n"
+            embed_str += f"* {self._get_last_spy_standing_score_formatted()}\n"
         if self.extracted:
             embed_str += f"* {self._print_extracted_score()}\n"
-        emb.add_field(name = "**Rationale**", value=embed_str)
+        if self.has_no_score_events() == False:
+            emb.add_field(name = "**Rationale**", value=embed_str)
         if image_url is not None:
             emb.set_image(url=image_url)
         emb.set_footer(text="Calculated by Scrims Helper")
