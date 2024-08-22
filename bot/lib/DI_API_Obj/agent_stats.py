@@ -59,6 +59,10 @@ class AgentTimelineStats:
         self.passive_pick_count = passive_pick_count
         self.active_pick_count = active_pick_count
 
+    def get_pick_count(self, gamemode: Union[GameMode, None] = None) -> int:
+        '''Gets the total pick count for an agent.'''
+        return self.pick_count.get_total() if gamemode is None else self.pick_count.get_gamemode(gamemode)
+
     def calculate_win_rate(self, gamemode: Union[GameMode, None] = None) -> float:
         '''Calculates the win rate for a specific gamemode.'''
         matches_played = self.pick_count.get_total() if gamemode is None else self.pick_count.get_gamemode(gamemode)

@@ -1,6 +1,6 @@
 from typing import List, Union, Dict, Optional
 from enum import Enum
-import re, json
+import re, json, copy
 from json import JSONDecodeError
 from lib.DI_API_Obj.account_progression import AccountProgression
 from lib.DI_API_Obj.account_statistics import AccountStats
@@ -181,7 +181,8 @@ class SweetUser(SweetUserPartial):
                 continue
             agent_stats[key] = AgentStats(key,
                                           response["progression"][key]["mastery"] if "mastery" in response["progression"][key] else None,
-                                          response["progression"][key]["echelon"] if "echelon" in response["progression"][key] else None)
+                                          response["progression"][key]["echelon"] if "echelon" in response["progression"][key] else None,
+                                          None, {})
 
         general_lifetime_account_stats: GeneralAccountStats = SweetUser._get_general_timeline_stats(response, "lifetime")
         agent_lifetime_stats: Dict[str, AgentTimelineStats] = SweetUser._get_agent_timeline_stats(response, "lifetime")
@@ -194,7 +195,6 @@ class SweetUser(SweetUserPartial):
         gadget_lifetime_stats: Dict[str, GadgetTimelineStats] = SweetUser._get_gadget_stats(response, "lifetime")
         for key in gadget_lifetime_stats.keys():
             gadget_stats[key] = GadgetStats(key, gadget_lifetime_stats[key])
-
         general_season_account_stats: Dict[Union[int, str], GeneralAccountStats] = {"lifetime": general_lifetime_account_stats}
         for season in response["stats"]:
             if season == "lifetime":
@@ -207,10 +207,10 @@ class SweetUser(SweetUserPartial):
             agent_seasonal_stats: Dict[str, AgentTimelineStats] = SweetUser._get_agent_timeline_stats(response, season)
             gadget_seasonal_stats: Dict[str, GadgetTimelineStats] = SweetUser._get_gadget_stats(response, season)
             for key in agent_seasonal_stats.keys():
-                if key not in agent_stats:
-                    agent_stats[key] = AgentStats(key, 0, 0, None, {season_number: agent_seasonal_stats[key]})
-                    continue
-                agent_stats[key].seasonal_stats[season_number] = agent_seasonal_stats[key]
+                # if key not in agent_stats:
+                #     agent_stats[key] = AgentStats(key, 0, 0, None, {season_number: agent_seasonal_stats[key]})
+                #     continue
+                agent_stats[key].seasonal_stats[season_number] = copy.deepcopy(agent_seasonal_stats[key])
             for key in gadget_seasonal_stats.keys():
                 if key not in gadget_stats:
                     gadget_stats[key] = GadgetStats(key, None, {season_number: gadget_seasonal_stats[key]})

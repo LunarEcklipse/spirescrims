@@ -2,6 +2,9 @@ import os, sys
 from typing import Optional
 from dotenv import load_dotenv
 from discord.ext import commands
+from lib.scrim_playerstats import ScrimPieCharts
+from lib.DI_API_Obj.gamemode import GameMode
+from PIL import Image
 
 absPath: str = os.path.abspath(__file__) # This little chunk makes sure the working directory is correct.
 dname: str = os.path.dirname(absPath)
@@ -39,7 +42,8 @@ async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})') #type: ignore
     api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET")) #type: ignore
     print(await api.search_users("lunarecklipse"))
-    sw = await api.get_user("3hikkmi2-mmi1-6061-1mh0-mk108m564ilm")
-    print(sw.dump_json())
-    print("Here")
+    sw = await api.get_user("609iii90-00ih-6243-19i3-h2hi1m44l2i4")
+    im = ScrimPieCharts.generate_agent_pickrate_pie_chart(sw, GameMode.TRIO, 1)
+    im.save("test.png")
+
 bot.run(os.getenv('DISCORD_BOT_TOKEN')) # Get the token from the .env file
