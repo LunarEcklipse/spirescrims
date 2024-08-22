@@ -1,6 +1,6 @@
 import asyncio, json, aiohttp
 from datetime import datetime, timedelta, timezone
-from typing import Union, List
+from typing import Union, List, Optional
 from lib.DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
 
 oauth_url: str = "https://community-auth.auth.us-east-1.amazoncognito.com/oauth2/token"
@@ -13,13 +13,16 @@ class DeceiveIncAPIResponseError(Exception):
         super().__init__(f"DeceiveInc API returned status {status}: {message}")
 
 class DeceiveIncAPIClient:
-    _session: aiohttp.ClientSession
-    _access_token: str
-    _token_expiration_time: datetime
+    _session: Optional[aiohttp.ClientSession]
+    _access_token: Optional[str]
+    _token_expiration_time: Optional[datetime]
     _client_id: str
     _client_secret: str
 
-    def __init__(self, client_id: str, client_secret: str, session: aiohttp.ClientSession = None):
+    def __init__(self,
+                 client_id: str,
+                 client_secret: str,
+                 session: Optional[aiohttp.ClientSession] = None):
         self._session = session if session is not None else aiohttp.ClientSession()
         self._client_id = client_id
         self._client_secret = client_secret
@@ -36,11 +39,11 @@ class DeceiveIncAPIClient:
 
     # Authorization functions
 
-    def _get_token_expiration_time(self) -> datetime:
+    def _get_token_expiration_time(self) -> Optional[datetime]:
         return self._token_expiration_time
 
     def _is_token_expired(self) -> bool:
-        return self._get_token_expiration_time() is None or datetime.now(timezone.utc) >= self._token_expiration_time
+        return self._get_token_expiration_time() is None or datetime.now(timezone.utc) >= self._token_expiration_time # type: ignore
     
     async def _refresh_access_token(self) -> None:
         if self._session is None:
@@ -55,7 +58,7 @@ class DeceiveIncAPIClient:
             self._access_token = data["access_token"]
             self._token_expiration_time = datetime.now(timezone.utc) + timedelta(seconds=data["expires_in"])
 
-    async def _get_access_token(self) -> str:
+    async def _get_access_token(self) -> Optional[str]:
         if self._access_token is None or self._is_token_expired():
             await self._refresh_access_token()
         return self._access_token
@@ -69,6 +72,8 @@ class DeceiveIncAPIClient:
         return out
     
     async def search_users(self, query: str, retry: bool = False) -> List[SweetUserPartial]:
+        if self._session is None:
+            self._session = aiohttp.ClientSession()
         search_url: str = f"{api_base_url}/search/user"
         async with self._session.get(search_url, headers={
             "Authorization": f"Bearer {await self._get_access_token()}"
@@ -86,8 +91,10 @@ class DeceiveIncAPIClient:
             data = await response.json()
             return [SweetUserPartial(user["sweetId"], user["displayName"]) for user in data]
     
-    async def get_user(self, sweet_id: str, retry: bool = False) -> SweetUser:
+    async def get_user(self, sweet_id: str, retry: bool = False) -> Optional[SweetUser]:
         user_url: str = f"{api_base_url}/user/{sweet_id}/profile"
+        if self._session is None:
+            self._session = aiohttp.ClientSession()
         async with self._session.get(user_url, headers={
             "Authorization": f"Bearer {await self._get_access_token()}"
         }) as response:
@@ -104,10 +111,7 @@ class DeceiveIncAPIClient:
                 elif e.status == 404: # User not found
                     raise DeceiveIncAPIResponseError(e.status, f"The user with Sweet ID {sweet_id} was not found.")
             data = await response.json()
-            print(json.dumps(data))
-            return SweetUser(sweet_id, data["displayName"],
-                             data["notASkillRank"],
-                             data["progression"]["Account"]["level"] if not None else None)
+            return SweetUser.from_api_response(sweet_id, data)
     
-    async def upgrade_user_partial(self, user_partial: SweetUserPartial) -> SweetUser:
+    async def upgrade_user_partial(self, user_partial: SweetUserPartial) -> Optional[SweetUser]:
         return await self.get_user(user_partial.sweet_id)

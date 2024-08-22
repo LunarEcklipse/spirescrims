@@ -1,4 +1,4 @@
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional
 import re, json, os
 from enum import StrEnum
 from word2number import w2n
@@ -35,14 +35,21 @@ class ItemSlot(StrEnum):
 class AgentTimelineStats:
     '''Wraps both lifetime and seasonal statistics for an agent, as well as their progression data.'''
     agent_name: str
-    playtime_seconds: int
-    pick_count: GamemodeCounter
-    win_count: GamemodeCounter
-    weapon_pick_count: Dict[ItemSlot, GamemodeCounter]
-    passive_pick_count: Dict[ItemSlot, GamemodeCounter]
-    active_pick_count: Dict[ItemSlot, GamemodeCounter]
+    playtime_seconds: Optional[int]
+    pick_count: Optional[GamemodeCounter]
+    win_count: Optional[GamemodeCounter]
+    weapon_pick_count: Optional[Dict[ItemSlot, GamemodeCounter]]
+    passive_pick_count: Optional[Dict[ItemSlot, GamemodeCounter]]
+    active_pick_count: Optional[Dict[ItemSlot, GamemodeCounter]]
 
-    def __init__(self, agent_name: str, mastery_level: int = None, echelon_level: int = None, playtime_seconds: int = None, pick_count: GamemodeCounter = None, win_count: GamemodeCounter = None, weapon_pick_count: Dict[ItemSlot, GamemodeCounter] = None, passive_pick_count: Dict[ItemSlot, GamemodeCounter] = None, active_pick_count: Dict[ItemSlot, GamemodeCounter] = None):
+    def __init__(self,
+                 agent_name: str,
+                 playtime_seconds: Optional[int] = None,
+                 pick_count: Optional[GamemodeCounter] = None,
+                 win_count: Optional[GamemodeCounter] = None,
+                 weapon_pick_count: Optional[Dict[ItemSlot, GamemodeCounter]] = None,
+                 passive_pick_count: Optional[Dict[ItemSlot, GamemodeCounter]] = None,
+                 active_pick_count: Optional[Dict[ItemSlot, GamemodeCounter]] = None):
         self.agent_name = agent_name
         self.playtime_seconds = playtime_seconds
         self.pick_count = pick_count
@@ -57,7 +64,7 @@ class AgentTimelineStats:
         return {item_slot: {"name": item_name, "pick_count": pick_count}}
 
     @staticmethod
-    def find_item_by_name(self, in_dict: dict, agent_name: str, item_slot: ItemSlot, item_name: str) -> Union[dict, None]:
+    def find_item_by_name(in_dict: dict, agent_name: str, item_slot: ItemSlot, item_name: str) -> Union[dict, None]:
         '''Finds an item in the dictionary by the Agent's name and the item's slot.'''
         # Items follow the pattern of "<agent_name>_<item_slot>"
         key = f"{agent_name}_{item_slot}"
@@ -69,12 +76,17 @@ class AgentTimelineStats:
 
 class AgentStats:
     agent_name: str
-    mastery_level: int
-    echelon_level: int
-    lifetime_stats: AgentTimelineStats
-    seasonal_stats: Dict[int, AgentTimelineStats]
+    mastery_level: Optional[int]
+    echelon_level: Optional[int]
+    lifetime_stats: Optional[AgentTimelineStats]
+    seasonal_stats: Optional[Dict[int, AgentTimelineStats]]
 
-    def __init__(self, agent_name: str, mastery_level: int = None, echelon_level: int = None, lifetime_stats: AgentTimelineStats = None, seasonal_stats: Dict[int, AgentTimelineStats] = {}):
+    def __init__(self,
+                 agent_name: str,
+                 mastery_level: Optional[int] = None,
+                 echelon_level: Optional[int] = None,
+                 lifetime_stats: Optional[AgentTimelineStats] = None,
+                 seasonal_stats: Optional[Dict[int, AgentTimelineStats]] = {}):
         self.agent_name = agent_name
         self.mastery_level = mastery_level
         self.echelon_level = echelon_level

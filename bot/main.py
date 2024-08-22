@@ -1,5 +1,7 @@
 import os, sys
+from typing import Optional
 from dotenv import load_dotenv
+from discord.ext import commands
 
 absPath: str = os.path.abspath(__file__) # This little chunk makes sure the working directory is correct.
 dname: str = os.path.dirname(absPath)
@@ -26,18 +28,18 @@ else:
     print("Initializing Reader modules, this may take several minutes...")
     bot.add_cog(scrim_reader.ScrimReader(bot))
     if __name__ == "__main__":
-        reader_cog: scrim_reader.ScrimReader = bot.cogs.get("ScrimReader")
-        reader_cog.spawn_processes()
-    print("Done!")
+        reader_cog = bot.cogs.get("ScrimReader") #type: ignore
+        if isinstance(reader_cog, scrim_reader.ScrimReader):
+            reader_cog.spawn_processes()
 
 cog = bot.cogs.get("ScrimReader")
-print("Here")
 
 @bot.event
 async def on_ready():
-    print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET"))
+    print(f'Logged in as {bot.user} (ID: {bot.user.id})') #type: ignore
+    api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET")) #type: ignore
     print(await api.search_users("lunarecklipse"))
-    print(await api.get_user("609iii90-00ih-6243-19i3-h2hi1m44l2i4"))
+    sw = await api.get_user("2840ll9j-5lh8-63k4-0731-5hm07l66m974")
+    print(sw.dump_json())
     print("Here")
 bot.run(os.getenv('DISCORD_BOT_TOKEN')) # Get the token from the .env file
