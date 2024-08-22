@@ -1,5 +1,7 @@
 from lib.DI_API_Obj.gamemode_counter import GamemodeCounter
+from lib.DI_API_Obj.gamemode import GameMode
 from typing import Union, Dict, Optional
+
 
 class GadgetTimelineStats:
     gadget_name: str
@@ -8,6 +10,15 @@ class GadgetTimelineStats:
     def __init__(self, gadget_name: str, pick_count: GamemodeCounter):
         self.gadget_name = gadget_name
         self.pick_count = pick_count
+
+    def calculate_pick_rate(self, overall_match_count: int, gamemode: Union[GameMode, None] = None) -> float:
+        '''Calculates the pick rate for a specific gadget.'''
+        matches_played = self.pick_count.get_total() if gamemode is None else self.pick_count.get_gamemode(gamemode)
+        if matches_played is None:
+            return 0.0
+        if overall_match_count == 0:
+            return 0.0
+        return matches_played / overall_match_count
 
 class GadgetStats:
     gadget_name: str

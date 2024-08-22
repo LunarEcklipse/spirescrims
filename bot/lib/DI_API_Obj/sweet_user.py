@@ -8,13 +8,11 @@ from lib.DI_API_Obj.gamemode_counter import GamemodeCounter
 from lib.DI_API_Obj.agent_stats import AgentStats, AgentTimelineStats, ItemSlot
 from lib.DI_API_Obj.gadget_stats import GadgetStats, GadgetTimelineStats
 from lib.DI_API_Obj.general_account_stats import GeneralAccountStats
+from lib.DI_API_Obj.gamemode import GameMode
 from word2number import w2n
 from datetime import datetime, timezone
 
-class GameMode(Enum):
-    SOLO=1,
-    DUO=2,
-    TRIO=3
+
 
 class SweetUserPartial:
     '''Returned by search results. Contains only the Sweet ID and Display Name.'''

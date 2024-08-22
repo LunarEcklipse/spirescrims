@@ -36,11 +36,11 @@ def connect_to_db() -> sqlean.Connection:
 class DatetimeConvert:
     @staticmethod
     def convert_datetime_to_str(value: datetime) -> str:
-        return value.astimezone(pytz.utc).strftime("%Y-%m-%d %H:%M:%S")
+        return value.astimezone(pytz.utc).isoformat()
     
     @staticmethod
     def convert_str_to_datetime(value: str) -> datetime:
-        return datetime.strptime(value, "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
+        return datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
 
 # Decorator wrapper
 def database_transaction(func): # This is a decorator that wraps a function in a database transaction.
@@ -61,7 +61,7 @@ def database_transaction(func): # This is a decorator that wraps a function in a
 def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     '''Initializes the database.'''
     cur.execute("CREATE TABLE IF NOT EXISTS api_data (auth_token TEXT, auth_expiration TEXT);")
-    cur.execute("CREATE TABLE IF NOT EXISTS ocr_reader_channels (guild_id INTEGER PRIMARY KEY, channel_id INTEGER PRIMARY KEY);")
+    cur.execute("CREATE TABLE IF NOT EXISTS ocr_reader_channels (guild_id INTEGER, channel_id INTEGER, PRIMARY KEY(guild_id, channel_id));")
 
 init_scrim_db()
 

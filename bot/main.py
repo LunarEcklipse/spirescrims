@@ -39,7 +39,7 @@ async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})') #type: ignore
     api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET")) #type: ignore
     print(await api.search_users("lunarecklipse"))
-    sw = await api.get_user("2840ll9j-5lh8-63k4-0731-5hm07l66m974")
+    sw = await api.get_user("3hikkmi2-mmi1-6061-1mh0-mk108m564ilm")
     print(sw.dump_json())
     print("Here")
 bot.run(os.getenv('DISCORD_BOT_TOKEN')) # Get the token from the .env file

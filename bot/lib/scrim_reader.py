@@ -11,9 +11,6 @@ import lib.scrim_sysinfo as scrim_sysinfo
 channel_id_list: List[int] = [1224071523187425320, 1256544655072428113, 1224071542854516739, 1266861462085959800] # Add your channel IDs here
 warnings.filterwarnings("ignore", category=FutureWarning, module="easyocr")
 
-if __name__ == "__main__":
-    multiprocessing.set_start_method('fork')
-
 class MatchScore:
     total_score: int
     eliminations: int
@@ -164,7 +161,6 @@ class ScrimReader(commands.Cog):
 
     def spawn_processes(self, num_ocr_processes: int = 8):
         for i in range(num_ocr_processes):
-            print(i)
             p = Thread(target=self._read_image_process, args=(self.read_queue, self.results_queue))
             p.start()
             self.reader_processes.append(p)

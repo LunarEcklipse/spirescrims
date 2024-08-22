@@ -3,6 +3,7 @@ import re, json, os
 from enum import StrEnum
 from word2number import w2n
 from lib.DI_API_Obj.gamemode_counter import GamemodeCounter
+from lib.DI_API_Obj.gamemode import GameMode
 
 # Find the path of the JSON file
 file_path = os.path.abspath(__file__)
@@ -57,6 +58,48 @@ class AgentTimelineStats:
         self.weapon_pick_count = weapon_pick_count
         self.passive_pick_count = passive_pick_count
         self.active_pick_count = active_pick_count
+
+    def calculate_win_rate(self, gamemode: Union[GameMode, None] = None) -> float:
+        '''Calculates the win rate for a specific gamemode.'''
+        matches_played = self.pick_count.get_total() if gamemode is None else self.pick_count.get_gamemode(gamemode)
+        matches_won = self.win_count.get_total() if gamemode is None else self.win_count.get_gamemode(gamemode)
+        if matches_played is None or matches_won is None:
+            return None
+        if matches_played == 0:
+            return 0.0
+        return matches_won / matches_played
+    
+    def calculate_weapon_pick_rate(self, item_slot: ItemSlot, item_name: str, gamemode: Union[GameMode, None] = None) -> float:
+        '''Calculates the pick rate for a specific weapon.'''
+        weapon_pick_count = self.weapon_pick_count[item_slot].get_total() if gamemode is None else self.weapon_pick_count[item_slot].get_gamemode(gamemode)
+        if weapon_pick_count is None:
+            return 0.0
+        agent_pick_count = self.pick_count.get_total() if gamemode is None else self.pick_count.get_gamemode(gamemode)
+        if agent_pick_count is None:
+            return 0.0
+        if agent_pick_count == 0:
+            return 0.0
+        return weapon_pick_count / agent_pick_count
+    
+    def calculate_passive_pick_rate(self, item_slot: ItemSlot, item_name: str, gamemode: Union[GameMode, None] = None) -> float:
+        '''Calculates the pick rate for a specific passive ability.'''
+        passive_pick_count = self.passive_pick_count[item_slot].get_total() if gamemode is None else self.passive_pick_count[item_slot].get_gamemode(gamemode)
+        agent_pick_count = self.pick_count.get_total() if gamemode is None else self.pick_count.get_gamemode(gamemode)
+        if passive_pick_count is None or agent_pick_count is None:
+            return 0.0
+        if agent_pick_count == 0:
+            return 0.0
+        return passive_pick_count / agent_pick_count
+    
+    def calculate_active_pick_rate(self, item_slot: ItemSlot, item_name: str, gamemode: Union[GameMode, None] = None) -> float:
+        '''Calculates the pick rate for a specific active ability.'''
+        active_pick_count = self.active_pick_count[item_slot].get_total() if gamemode is None else self.active_pick_count[item_slot].get_gamemode(gamemode)
+        agent_pick_count = self.pick_count.get_total() if gamemode is None else self.pick_count.get_gamemode(gamemode)
+        if active_pick_count is None or agent_pick_count is None:
+            return 0.0
+        if agent_pick_count == 0:
+            return 0.0
+        return active_pick_count / agent_pick_count
 
     @staticmethod
     def wrap_item_pick_dictionary(item_slot: ItemSlot, item_name: str, pick_count: int) -> dict:

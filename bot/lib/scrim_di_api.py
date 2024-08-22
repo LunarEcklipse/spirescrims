@@ -2,6 +2,7 @@ import asyncio, json, aiohttp
 from datetime import datetime, timedelta, timezone
 from typing import Union, List, Optional
 from lib.DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
+from lib.scrim_sqlite import DeceiveAPIAuthData
 
 oauth_url: str = "https://community-auth.auth.us-east-1.amazoncognito.com/oauth2/token"
 api_base_url: str = "https://1gy5zni8ll.execute-api.us-east-1.amazonaws.com/community/game/deceiveinc"
@@ -57,8 +58,12 @@ class DeceiveIncAPIClient:
             data = await response.json()
             self._access_token = data["access_token"]
             self._token_expiration_time = datetime.now(timezone.utc) + timedelta(seconds=data["expires_in"])
+            DeceiveAPIAuthData.set_auth_token(self._access_token, self._token_expiration_time)
 
     async def _get_access_token(self) -> Optional[str]:
+        db_token_data = DeceiveAPIAuthData.get_auth_token()
+        if db_token_data is not None and not DeceiveAPIAuthData.is_token_expired(db_token_data[1]):
+            return db_token_data[0]
         if self._access_token is None or self._is_token_expired():
             await self._refresh_access_token()
         return self._access_token
