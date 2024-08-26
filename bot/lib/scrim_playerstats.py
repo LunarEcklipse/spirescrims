@@ -51,8 +51,12 @@ class ScrimPieCharts:
         return Image.open(img_buf)
     
     @staticmethod
-    def generate_gadget_pickrate_pie_chart(user: SweetUser, gamemode: Union[GameMode, None] = None, season: int = None) -> Union[Image, None]:
-        '''Generates a pie chart showing the gadget pick rate for a specific gamemode and season. If no season is specified, uses lifetime stats.'''
+    def generate_gadget_pickrate_pie_chart(user: SweetUser, gamemode: Union[GameMode, None] = None, season: Union[int, None] = None) -> Image.ImageFile.ImageFile:
+        '''Generates a pie chart showing the gadget pick rate for a specific gamemode and season. If no season is specified, uses lifetime stats.
+        ### Parameters
+        * `user` - `SweetUser` - The SweetUser to generate the data from.
+        * `gamemode` - `Union[Gamemode, None]` - Default `None` - The game mode (Solo/Duo/Trio) to generate stats for. If no game mode is specified, uses data from all game modes.
+        * `season` - `Union[int, None]` - Default `None` - The season to generate stats for. If no season is supplied, uses lifetime stats.'''
         gadget_stats = user.gadget_stats
         gadgets: List[Tuple[str, int]] = []
         title: str = f"Gadget Pick Rate for {user.display_name}"
