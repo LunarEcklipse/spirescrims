@@ -19,6 +19,10 @@ class GadgetTimelineStats:
         if overall_match_count == 0:
             return 0.0
         return matches_played / overall_match_count
+    
+    def get_number_of_picks(self, gamemode: GameMode) -> int:
+        '''Returns the number of picks for a specific gamemode.'''
+        return self.pick_count.get_gamemode(gamemode)
 
 class GadgetStats:
     gadget_name: str
@@ -28,4 +32,4 @@ class GadgetStats:
     def __init__(self, gadget_name: str, lifetime_stats: Optional[GadgetTimelineStats] = None, seasonal_stats: Optional[Dict[int, GadgetTimelineStats]] = {}):
         self.gadget_name = gadget_name
         self.lifetime_stats = lifetime_stats
-        self.seasonal_stats = seasonal_stats
+        self.seasonal_stats = dict.copy(seasonal_stats)

@@ -2,7 +2,7 @@ import os, sys
 from typing import Optional
 from dotenv import load_dotenv
 from discord.ext import commands
-from lib.scrim_playerstats import ScrimPieCharts
+from lib.scrim_playerstats import ScrimPieCharts, ScrimPlots
 from lib.DI_API_Obj.gamemode import GameMode
 from PIL import Image
 
@@ -40,10 +40,10 @@ cog = bot.cogs.get("ScrimReader")
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})') #type: ignore
-    api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET")) #type: ignore
-    print(await api.search_users("lunarecklipse"))
-    sw = await api.get_user("609iii90-00ih-6243-19i3-h2hi1m44l2i4")
-    im = ScrimPieCharts.generate_agent_pickrate_pie_chart(sw, GameMode.TRIO, 1)
-    im.save("test.png")
+    # api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET")) #type: ignore
+    # print(await api.search_users("lunarecklipse"))
+    # sw = await api.get_user("609iii90-00ih-6243-19i3-h2hi1m44l2i4")
+    # im = ScrimPlots.calculate_agent_pickrates_over_seasons(sw)
+    # im.save("test.png")
 
 bot.run(os.getenv('DISCORD_BOT_TOKEN')) # Get the token from the .env file

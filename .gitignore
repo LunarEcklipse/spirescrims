@@ -5,4 +5,5 @@
 /bot/__pycache__/*.pyc
 bot/rsc/spire_scrims.db
 /venv/*
-
+.vscode/*
+.vscode/settings.json

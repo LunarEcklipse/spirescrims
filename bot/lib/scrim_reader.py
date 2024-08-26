@@ -161,7 +161,7 @@ class ScrimReader(commands.Cog):
 
     def spawn_processes(self, num_ocr_processes: int = 8):
         for i in range(num_ocr_processes):
-            p = Thread(target=self._read_image_process, args=(self.read_queue, self.results_queue))
+            p = Thread(target=self._read_image_process, args=(self.read_queue, self.results_queue), name=f"OCRReaderThread_{str(i)}")
             p.start()
             self.reader_processes.append(p)
 
