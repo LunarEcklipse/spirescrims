@@ -14,8 +14,11 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="easyocr")
 class MatchScore:
     total_score: int
     eliminations: int
+    eliminations_known: bool
     vault_terminals_disabled: int
+    terminals_disabled_known: bool
     allies_revived: int
+    allies_revived_known: bool
     vault_entered: bool
     last_spy_standing: bool
     extracted: bool
@@ -30,17 +33,26 @@ class MatchScore:
                  extracted: bool = False):
         self.total_score = total_score
         self.eliminations = eliminations if eliminations is not None else 0
+        self.eliminations_known = False if self.eliminations == -1 else True
         self.vault_terminals_disabled = vault_terminals_disabled if vault_terminals_disabled is not None else 0
+        self.terminals_disabled_known = False if self.vault_terminals_disabled == -1 else True
         self.allies_revived = allies_revived if allies_revived is not None else 0
+        self.allies_revived_known = False if self.allies_revived == -1 else True
         self.vault_entered = vault_entered
         self.last_spy_standing = last_spy_standing
         self.extracted = extracted
+
+    def is_score_uncertain(self) -> bool:
+        '''Returns whether the score is uncertain.'''
+        return not self.eliminations_known or not self.terminals_disabled_known or not self.allies_revived_known
 
     def _get_elimination_score_formatted(self) -> Union[str, None]:
         '''Returns the Elimination score as a formatted string.'''
         match self.eliminations:
             case 0:
                 return None
+            case -1:
+                return 'Unknown Eliminations: ?'
             case 1:
                 return '1 Elimination: 1'
             case _:
@@ -55,6 +67,8 @@ class MatchScore:
         match self.vault_terminals_disabled:
             case 0:
                 return None
+            case -1:
+                return 'Unknown Vault Terminals Disabled: ?'
             case 1:
                 return '1 Vault Terminal Disabled: 1'
             case _:
@@ -65,6 +79,8 @@ class MatchScore:
         match self.allies_revived:
             case 0:
                 return None
+            case -1:
+                return 'Unknown Allies Revived: ?'
             case 1:
                 return '1 Ally Revived: -1'
             case _:
@@ -87,6 +103,8 @@ class MatchScore:
     
     def __str__(self) -> str:
         out = f"**Estimated Score:** {self.total_score}"
+        if self.is_score_uncertain():
+            out += " (**Score is Uncertain: See Below**)"
         if self.has_no_score_events():
             return out
         out += "\n## Rationale\n"
@@ -105,16 +123,17 @@ class MatchScore:
         return out
 
     def create_embed(self, image_url: Union[str, None] = None) -> discord.Embed:
-        emb = discord.Embed(title=f"Estimated Score: {self.total_score}", color=0x8000ff, timestamp=datetime.now())
+        emb: discord.Embed = discord.Embed(title=f"Estimated Score: {self.total_score}", color=0x8000ff, timestamp=datetime.now())
+        emb.description: str = "**NOTE: Score Is Uncertain! Please Manually Verify Results!**" if self.is_score_uncertain() else ""
         emb.set_author(name="Scoreboard Analysis")
         embed_str: str = ""
-        if self.eliminations > 0:
+        if self.eliminations != 0:
             embed_str += f"* {self._get_elimination_score_formatted()}\n"
         if self.vault_entered:
             embed_str += f"* {self._get_vault_entered_score_formatted()}\n"
-        if self.vault_terminals_disabled > 0:
+        if self.vault_terminals_disabled != 0:
             embed_str += f"* {self._get_vault_terminals_disabled_score_formatted()}\n"
-        if self.allies_revived > 0:
+        if self.allies_revived != 0:
             embed_str += f"* {self._get_allies_revived_score_formatted()}\n"
         if self.last_spy_standing:
             embed_str += f"* {self._get_last_spy_standing_score_formatted()}\n"
@@ -220,9 +239,9 @@ class ScrimReader(commands.Cog):
             if match:
                 # Get the number of eliminations on the front of the line
                 return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
-            match = pattern2.search(line) # Last ditch effort here
+            match = pattern2.search(line) # If we reach here, we can't read the number and thus should report -1 to indicate an unknown result.
             if match:
-                return 1
+                return -1
         return None
 
     def _find_if_entered_vault(self, text: Union[List[str], str, None]) -> bool:
@@ -263,9 +282,9 @@ class ScrimReader(commands.Cog):
             if match:
                 # Get the number of vault terminals disabled on the front of the line
                 return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
-            match = pattern2.search(line) # Backup, assume 1
+            match = pattern2.search(line) # Backup, report unknown
             if match:
-                return 1
+                return -1
         return None
 
     def _find_last_spy_standing(self, text: Union[List[str], str, None]) -> bool:
@@ -325,9 +344,9 @@ class ScrimReader(commands.Cog):
             if match:
                 # Get the number of allies revived on the front of the line
                 return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
-            match = pattern2.search(line) # Backup, assume 1
+            match = pattern2.search(line) # Backup, report unknown
             if match:
-                return 1
+                return -1
         return None
     
     def _calculate_score_from_text(self, text: List[str]) -> MatchScore:
@@ -340,14 +359,16 @@ class ScrimReader(commands.Cog):
         allies_revived = self._find_num_allies_revived(text)
         match_score = MatchScore(0)
         if eliminations is not None:
-            match_score.total_score += eliminations
+            match_score.total_score += eliminations if eliminations != -1 else 0
             match_score.eliminations = eliminations
+            match_score.eliminations_known = True if eliminations != -1 else False
         if vault_entered:
             match_score.total_score += 1
             match_score.vault_entered = True
         if vault_terminals_disabled is not None:
-            match_score.total_score += vault_terminals_disabled
+            match_score.total_score += vault_terminals_disabled if vault_terminals_disabled != -1 else 0
             match_score.vault_terminals_disabled = vault_terminals_disabled
+            match_score.terminals_disabled_known = True if vault_terminals_disabled != -1 else False
         if last_spy_standing:
             match_score.total_score += 4
             match_score.last_spy_standing = True
@@ -355,8 +376,9 @@ class ScrimReader(commands.Cog):
             match_score.total_score += 4
             match_score.extracted = True
         if allies_revived is not None:
-            match_score.total_score -= allies_revived
+            match_score.total_score -= allies_revived if allies_revived != -1 else 0
             match_score.allies_revived = allies_revived
+            match_score.allies_revived_known = True if allies_revived != -1 else False
         return match_score
     
     ### LISTENERS ###
