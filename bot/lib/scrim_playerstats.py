@@ -98,6 +98,5 @@ class ScrimPlots:
     def calculate_agent_pickrates_over_seasons(sw: SweetUser, gamemode: Union[GameMode, None] = None) -> Image:
         '''Calculates the agent pick rates over all seasons for a specific gamemode. If no gamemode is supplied uses all gamemodes.'''
         agent_stats = sw.agent_stats
-        season_play_counts: List[int] = []
-        agent_names: List[str] = []
-        # TODO: Implement this method
+        agent_pick_counts: List[Tuple[str, Dict[int, int]]] = []
+        

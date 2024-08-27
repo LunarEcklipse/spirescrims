@@ -2,7 +2,7 @@ import asyncio, json, aiohttp
 from datetime import datetime, timedelta, timezone
 from typing import Union, List, Optional
 from lib.DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
-from lib.scrim_sqlite import DeceiveAPIAuthData
+from lib.scrim_sqlite import DeceiveAPIAuthData, SweetUserCache
 
 oauth_url: str = "https://community-auth.auth.us-east-1.amazoncognito.com/oauth2/token"
 api_base_url: str = "https://1gy5zni8ll.execute-api.us-east-1.amazonaws.com/community/game/deceiveinc"
@@ -76,7 +76,23 @@ class DeceiveIncAPIClient:
         await out._refresh_access_token()
         return out
     
-    async def search_users(self, query: str, retry: bool = False) -> List[SweetUserPartial]:
+    async def search_users(self, query: str, retry: bool = False, force: bool = False) -> List[SweetUserPartial]:
+        '''Searches for users by name, returning a list of SweetUserPartial objects.
+        ### Parameters:
+        * `query` (`str`): The username to search for.
+        * `retry` (`bool`, optional): Whether or not to retry the request if the access token is invalid. Defaults to `False`. By default, requests will retry once before failing.
+        * `force` (`bool`, optional): Whether or not to force a refresh of the cache. Defaults to `False`.
+        ### Returns:
+        * `List[SweetUserPartial]`: A list of SweetUserPartial objects representing the users found.'''
+        potential_users: List[SweetUserPartial] = SweetUserCache.get_user_partials_by_name(query)
+        search_results_expired: bool = False
+        if len(potential_users) > 0:
+            for i in potential_users:
+                if SweetUserCache.has_user_partial_expired(i.sweet_id):
+                    search_results_expired = True
+                    break
+            if not search_results_expired and not force:
+                return potential_users
         if self._session is None:
             self._session = aiohttp.ClientSession()
         search_url: str = f"{api_base_url}/search/user"
@@ -94,9 +110,16 @@ class DeceiveIncAPIClient:
                     await self._refresh_access_token()
                     return await self.search_users(query, True)
             data = await response.json()
-            return [SweetUserPartial(user["sweetId"], user["displayName"]) for user in data]
+            out = [SweetUserPartial(user["sweetId"], user["displayName"]) for user in data]
+            for i in out:
+                SweetUserCache.set_user_partial(i)
+            return out
     
-    async def get_user(self, sweet_id: str, retry: bool = False) -> Optional[SweetUser]:
+    async def get_user(self, sweet_id: str, retry: bool = False, force: bool = False) -> Optional[SweetUser]:
+        # Check to see if a version of the user is in the cache and not expired.
+        cached_user = SweetUserCache.get_user(sweet_id)
+        if cached_user is not None and force == False:
+            return cached_user
         user_url: str = f"{api_base_url}/user/{sweet_id}/profile"
         if self._session is None:
             self._session = aiohttp.ClientSession()
@@ -116,7 +139,9 @@ class DeceiveIncAPIClient:
                 elif e.status == 404: # User not found
                     raise DeceiveIncAPIResponseError(e.status, f"The user with Sweet ID {sweet_id} was not found.")
             data = await response.json()
-            return SweetUser.from_api_response(sweet_id, data)
+            sw = SweetUser.from_api_response(sweet_id, data)
+            SweetUserCache.set_user(sw)
+            return sw
     
     async def upgrade_user_partial(self, user_partial: SweetUserPartial) -> Optional[SweetUser]:
         return await self.get_user(user_partial.sweet_id)

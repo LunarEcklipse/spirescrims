@@ -3,6 +3,7 @@ from typing import List, Tuple, Union
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from contextlib import closing
+from lib.di_api_obj import SweetUserPartial, SweetUser
 
 sqlean.extensions.enable_all()
 
@@ -12,6 +13,7 @@ os.chdir(dname)
 load_dotenv()
 
 sqlite_db_path: str = "../rsc/spire_scrims.db"
+sweet_user_cache_expiration_seconds: int = 3600 # 1 hour
 db_lock = threading.Lock()
 
 class BoolConvert:
@@ -62,6 +64,8 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     '''Initializes the database.'''
     cur.execute("CREATE TABLE IF NOT EXISTS api_data (auth_token TEXT, auth_expiration TEXT);")
     cur.execute("CREATE TABLE IF NOT EXISTS ocr_reader_channels (guild_id INTEGER, channel_id INTEGER, PRIMARY KEY(guild_id, channel_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_partial_cache (sweet_id TEXT PRIMARY KEY NOT NULL, display_name TEXT, last_updated TEXT);")
+    cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_cache (sweet_id TEXT PRIMARY KEY NOT NULL, json_data TEXT, last_updated TEXT, FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
 
 init_scrim_db()
 
@@ -91,6 +95,87 @@ class DeceiveAPIAuthData:
         '''Sets the auth token in the database.'''
         cur.execute("DELETE FROM api_data;")
         cur.execute("INSERT INTO api_data (auth_token, auth_expiration) VALUES (?, ?);", (token, DatetimeConvert.convert_datetime_to_str(expiration)))
+
+class SweetUserCache:
+    @staticmethod
+    @database_transaction
+    def get_user(cur, sweet_id: str) -> Union[SweetUser, None]:
+        '''Gets a user from the cache.'''
+        cur.execute("SELECT * FROM sweet_user_cache WHERE sweet_id = ?;", (sweet_id,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return SweetUser.from_json(result[1])
+
+    @staticmethod
+    @database_transaction
+    def set_user(cur, user: SweetUser) -> None:
+        '''Sets a user in the cache.'''
+        cur.execute("DELETE FROM sweet_user_cache WHERE sweet_id = ?;", (user.sweet_id,))
+        cur.execute("INSERT INTO sweet_user_cache (sweet_id, json_data, last_updated) VALUES (?, ?, ?);", (user.sweet_id, user.to_json(), DatetimeConvert.convert_datetime_to_str(datetime.now(timezone.utc))))
+
+    @staticmethod
+    @database_transaction
+    def get_user_last_updated(cur, sweet_id: str) -> Union[datetime, None]:
+        '''Gets the last updated timestamp for a user.'''
+        cur.execute("SELECT last_updated FROM sweet_user_cache WHERE sweet_id = ?;", (sweet_id,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return DatetimeConvert.convert_str_to_datetime(result[0])
+
+    @staticmethod
+    @database_transaction
+    def has_user_cache_expired(cur, sweet_id: str) -> bool:
+        '''Determines if the user cache has expired.'''
+        last_updated = SweetUserCache.get_user_last_updated(cur, sweet_id)
+        if last_updated is None:
+            return True
+        return last_updated + timedelta(seconds=sweet_user_cache_expiration_seconds) <= datetime.now(timezone.utc)
+
+    @staticmethod
+    @database_transaction
+    def get_user_partial_by_id(cur, sweet_id: str) -> Union[SweetUserPartial, None]:
+        '''Gets a user partial from the cache.'''
+        cur.execute("SELECT * FROM sweet_user_partial_cache WHERE sweet_id = ?;", (sweet_id,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return SweetUserPartial(result[0], result[1], DatetimeConvert.convert_str_to_datetime(result[2]))
+
+    def get_user_partial_by_name(cur, name: str) -> Union[List[SweetUserPartial], None]:
+        '''Gets a user partial from the cache by name. As names are not unique, returns a list instead.'''
+        cur.execute("SELECT * FROM sweet_user_partial_cache WHERE display_name = ?;", (name,))
+        results = cur.fetchall()
+        if results is None:
+            return None
+        return [SweetUserPartial(result[0], result[1], DatetimeConvert.convert_str_to_datetime(result[2])) for result in results]
+
+    @staticmethod
+    @database_transaction
+    def get_user_partial_last_updated(cur, sweet_id: str) -> Union[datetime, None]:
+        '''Gets the last updated timestamp for a user partial.'''
+        cur.execute("SELECT last_updated FROM sweet_user_partial_cache WHERE sweet_id = ?;", (sweet_id,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return DatetimeConvert.convert_str_to_datetime(result[0])
+
+    @staticmethod
+    @database_transaction
+    def set_user_partial(cur, user: SweetUserPartial) -> None:
+        '''Sets a user partial in the cache.'''
+        cur.execute("DELETE FROM sweet_user_partial_cache WHERE sweet_id = ?;", (user.sweet_id,))
+        cur.execute("INSERT INTO sweet_user_partial_cache (sweet_id, display_name, last_updated) VALUES (?, ?, ?);", (user.sweet_id, user.display_name, DatetimeConvert.convert_datetime_to_str(datetime.now(timezone.utc))))
+
+    @staticmethod
+    @database_transaction
+    def has_user_partial_cache_expired(cur, sweet_id: str) -> bool:
+        '''Determines if the user partial cache has expired.'''
+        last_updated = SweetUserCache.get_user_partial_last_updated(cur, sweet_id)
+        if last_updated is None:
+            return True
+        return last_updated + timedelta(seconds=sweet_user_cache_expiration_seconds) <= datetime.now(timezone.utc)
 
 ### READER ###
 
