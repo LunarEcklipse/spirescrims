@@ -19,5 +19,5 @@ for key in api_kv_dict["passives"]:
 for key in api_kv_dict["actives"]:
     new_dict["actives"][key] = api_kv_dict["actives"][key]["n"]
 
-with open(json_path, "w") as f:
+with open(new_json_path, "w") as f:
     json.dump(new_dict, f, indent=4)
