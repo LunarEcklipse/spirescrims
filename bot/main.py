@@ -42,7 +42,7 @@ async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})') #type: ignore
     api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET")) #type: ignore
     sw = await api.get_user("609iii90-00ih-6243-19i3-h2hi1m44l2i4")
-    # im = ScrimPlots.calculate_agent_pickrates_over_seasons(sw)
-    # im.save("test.png")
+    im = ScrimPlots.calculate_agent_pickrates_over_seasons(sw)
+    im.save("test.png")
 
 bot.run(os.getenv('DISCORD_BOT_TOKEN')) # Get the token from the .env file

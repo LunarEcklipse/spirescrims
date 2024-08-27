@@ -63,6 +63,7 @@ class AgentTimelineStats:
         '''Gets the total pick count for an agent.'''
         return self.pick_count.get_total() if gamemode is None else self.pick_count.get_gamemode(gamemode)
 
+
     def calculate_win_rate(self, gamemode: Union[GameMode, None] = None) -> float:
         '''Calculates the win rate for a specific gamemode.'''
         matches_played = self.pick_count.get_total() if gamemode is None else self.pick_count.get_gamemode(gamemode)
@@ -139,3 +140,21 @@ class AgentStats:
         self.echelon_level = echelon_level
         self.lifetime_stats = lifetime_stats
         self.seasonal_stats = seasonal_stats
+
+    def get_per_season_pick_count(self, gamemode: Union[GameMode, None] = None) -> Dict[int, int]: # This method was created to safely access season data in a consistent length format in cases where agents may not have existed before a certain season.
+        '''Gets the pick count for an agent per season. Returns zero for any season where the agent didn't exist or wasn't played for data purposes.'''
+        per_season_pick_count = {}
+        # First, get the highest season number from the seasonal stats
+        highest_season = 0
+        for season in self.seasonal_stats.keys():
+            if type(season) != int: # Safety check
+                continue
+            if season > highest_season:
+                highest_season = season
+        # Now, iterate through each season and get the pick count. If the season doesn't exist set it to zero.
+        for season in range(1, highest_season + 1):
+            if season in self.seasonal_stats:
+                per_season_pick_count[season] = self.seasonal_stats[season].get_pick_count(gamemode)
+            else:
+                per_season_pick_count[season] = 0
+        return per_season_pick_count

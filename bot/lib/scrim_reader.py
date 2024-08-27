@@ -124,7 +124,7 @@ class MatchScore:
 
     def create_embed(self, image_url: Union[str, None] = None) -> discord.Embed:
         emb: discord.Embed = discord.Embed(title=f"Estimated Score: {self.total_score}", color=0x8000ff, timestamp=datetime.now())
-        emb.description: str = "**NOTE: Score Is Uncertain! Please Manually Verify Results!**" if self.is_score_uncertain() else ""
+        emb.description = "**NOTE: Score Is Uncertain! Please Manually Verify Results!**" if self.is_score_uncertain() else ""
         emb.set_author(name="Scoreboard Analysis")
         embed_str: str = ""
         if self.eliminations != 0:
