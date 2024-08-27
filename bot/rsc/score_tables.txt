@@ -1,0 +1,11 @@
+ELIMINATIONS:
+    1 = 100
+    2 = 200
+    3 = 300
+    4 = 400
+    
+VAULT TERMINALS DISABLED:
+    1 = 150
+    2 = 300
+    3 = 450
+ALLIES REVIVED:

@@ -495,7 +495,7 @@ class SweetUser(SweetUserPartial):
                                                                  ItemSlot.MOD2: GamemodeCounter(value["lifetime_stats"]["active_pick_count"]["mod2"]["solo"],
                                                                                                 value["lifetime_stats"]["active_pick_count"]["mod2"]["duo"],
                                                                                                 value["lifetime_stats"]["active_pick_count"]["mod2"]["trio"])}),
-                                                                                                seasonal_stats),
+                                                                                                seasonal_stats)
             gadget_stats: Dict[str, GadgetStats] = {}
             for key, value in json_str["gadget_stats"].items():
                 seasonal_stats: Dict[Union[int, str], GadgetTimelineStats] = {}
