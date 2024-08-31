@@ -390,7 +390,7 @@ class SweetUser(SweetUserPartial):
                 out_dict["gadget_stats"][key]["seasonal_stats"][season]["pick_count"]["trio"] = stats.pick_count.trio
 
         out_dict["data_creation_time"] = datetime.now(tz=timezone.utc).isoformat()
-        return json.dumps(out_dict, indent=4)
+        return json.dumps(out_dict)
     
     @staticmethod
     def from_json(json_str: Union[dict, str]) -> 'SweetUser':

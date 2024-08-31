@@ -1,9 +1,9 @@
-import sqlean, pytz, asyncio, sys, threading, os
+import sqlean, pytz, asyncio, sys, threading, os, discord
 from typing import List, Tuple, Union
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from contextlib import closing
-from lib.di_api_obj import SweetUserPartial, SweetUser
+from lib.DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
 
 sqlean.extensions.enable_all()
 
@@ -66,6 +66,8 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS ocr_reader_channels (guild_id INTEGER, channel_id INTEGER, PRIMARY KEY(guild_id, channel_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_partial_cache (sweet_id TEXT PRIMARY KEY NOT NULL, display_name TEXT, last_updated TEXT);")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_cache (sweet_id TEXT PRIMARY KEY NOT NULL, json_data TEXT, last_updated TEXT, FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_discord_links (discord_id INTEGER NOT NULL, sweet_id TEXT NOT NULL, PRIMARY KEY (discord_id, sweet_id), FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
+
 
 init_scrim_db()
 
@@ -112,7 +114,7 @@ class SweetUserCache:
     def set_user(cur, user: SweetUser) -> None:
         '''Sets a user in the cache.'''
         cur.execute("DELETE FROM sweet_user_cache WHERE sweet_id = ?;", (user.sweet_id,))
-        cur.execute("INSERT INTO sweet_user_cache (sweet_id, json_data, last_updated) VALUES (?, ?, ?);", (user.sweet_id, user.to_json(), DatetimeConvert.convert_datetime_to_str(datetime.now(timezone.utc))))
+        cur.execute("INSERT INTO sweet_user_cache (sweet_id, json_data, last_updated) VALUES (?, ?, ?);", (user.sweet_id, user.dump_json(), DatetimeConvert.convert_datetime_to_str(datetime.now(timezone.utc))))
 
     @staticmethod
     @database_transaction
@@ -176,6 +178,45 @@ class SweetUserCache:
         if last_updated is None:
             return True
         return last_updated + timedelta(seconds=sweet_user_cache_expiration_seconds) <= datetime.now(timezone.utc)
+
+class DiscordAccountLinks:
+    @staticmethod
+    @database_transaction
+    def get_sweet_id_from_discord_id(cur, discord_id: Union[discord.Member, discord.User, int]) -> Union[str, None]:
+        '''Gets the Sweet ID linked to a Discord ID.'''
+        if isinstance(discord_id, discord.Member) or isinstance(discord_id, discord.User):
+            discord_id = discord_id.id
+        cur.execute("SELECT sweet_id FROM sweet_user_discord_links WHERE discord_id = ?;", (discord_id,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return result[0]
+    
+    @staticmethod
+    @database_transaction
+    def get_discord_id_from_sweet_id(cur, sweet_id: str) -> Union[int, None]:
+        '''Gets the Discord ID linked to a Sweet ID.'''
+        cur.execute("SELECT discord_id FROM sweet_user_discord_links WHERE sweet_id = ?;", (sweet_id,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return result[0]
+
+    @staticmethod
+    @database_transaction
+    def link_discord_id_to_sweet_id(cur, discord_id: Union[discord.Member, discord.User, int], sweet_id: str) -> None:
+        '''Links a Discord ID to a Sweet ID.'''
+        if isinstance(discord_id, discord.Member) or isinstance(discord_id, discord.User):
+            discord_id = discord_id.id
+        cur.execute("INSERT INTO sweet_user_discord_links (discord_id, sweet_id) VALUES (?, ?);", (discord_id, sweet_id))
+
+    @staticmethod
+    @database_transaction
+    def unlink_discord_id(cur, discord_id: Union[discord.Member, discord.User, int]) -> None:
+        '''Unlinks a Discord ID from a Sweet ID.'''
+        if isinstance(discord_id, discord.Member) or isinstance(discord_id, discord.User):
+            discord_id = discord_id.id
+        cur.execute("DELETE FROM sweet_user_discord_links WHERE discord_id = ?;", (discord_id,))
 
 ### READER ###
 

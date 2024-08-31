@@ -161,9 +161,45 @@ class ImageProcessTask:
     async def edit_message(self, content: str, embed: discord.Embed):
         await self.message.edit(content=content, embed=embed)
 
+class OCRReaderProcess:
+    reader: easyocr.Reader
+    read_queue: Queue
+    results_queue: Queue
+    thread: Thread
+    thread_name: str
+    ocr_ready: bool
+
+    def __init__(self, read_queue: Queue, results_queue: Queue, thread_name: str):
+        self.read_queue = read_queue
+        self.results_queue = results_queue
+        self.thread_name = thread_name
+        self.ocr_ready = False
+        self.thread = Thread(target=self._read_image_process, name=self.thread_name)
+        self.thread.start()
+
+    def _read_image_process(self):
+        self.reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
+        self.ocr_ready = True
+        try:
+            while True:
+                image_task: ImageProcessTask = self.read_queue.get(block=True) # Wait until an image becomes available for the processor
+                image_task.image = self._resize_image_shortest_side(image_task.image, 720)
+                image_buffer = io.BytesIO()
+                image_task.image.save(image_buffer, format='PNG')
+                image_buffer.seek(0)
+                result = self.reader.readtext(image_buffer.getvalue())
+                raw_result: list = []
+                for detection in result:
+                    raw_result.append(detection[1])
+                image_task.score = self._calculate_score_from_text(raw_result)
+                self.results_queue.put(image_task)
+        except Exception as e:
+            ocr_ready = False
+            print(e)
+
 class ScrimReader(commands.Cog):
     bot: discord.Bot
-    reader_processes: List[Thread]
+    reader_processes: List[OCRReaderProcess]
     read_queue: Queue
     results_queue: Queue
     
@@ -180,29 +216,9 @@ class ScrimReader(commands.Cog):
 
     def spawn_processes(self, num_ocr_processes: int = 8):
         for i in range(num_ocr_processes):
-            p = Thread(target=self._read_image_process, args=(self.read_queue, self.results_queue), name=f"OCRReaderThread_{str(i)}")
-            p.start()
-            self.reader_processes.append(p)
+            self.reader_processes.append(OCRReaderProcess(self.read_queue, self.results_queue, f"OCRReaderProcess_{i}"))
 
     ### READER FUNCTIONS ###
-
-    def _read_image_process(self, read_queue: multiprocessing.Queue, results_queue: multiprocessing.Queue):
-        reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
-        try:
-            while True:
-                image_task: ImageProcessTask = read_queue.get(block=True) # Wait until an image becomes available for the processor
-                image_task.image = self._resize_image_shortest_side(image_task.image, 720)
-                image_buffer = io.BytesIO()
-                image_task.image.save(image_buffer, format='PNG')
-                image_buffer.seek(0)
-                result = reader.readtext(image_buffer.getvalue())
-                raw_result: list = []
-                for detection in result:
-                    raw_result.append(detection[1])
-                image_task.score = self._calculate_score_from_text(raw_result)
-                results_queue.put(image_task)
-        except Exception as e:
-            print(e)
 
     def _resize_image_shortest_side(self, img: Image, size: int) -> Image:
         '''Resizes an image so that the shortest side is a certain size.
