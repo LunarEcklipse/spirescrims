@@ -1,9 +1,10 @@
-import sqlean, pytz, asyncio, sys, threading, os, discord
+import sqlean, pytz, asyncio, sys, threading, os, discord, uuid
 from typing import List, Tuple, Union
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from contextlib import closing
 from lib.DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
+from lib.scrim_logging import scrim_logger
 
 sqlean.extensions.enable_all()
 
@@ -15,6 +16,11 @@ load_dotenv()
 sqlite_db_path: str = "../rsc/spire_scrims.db"
 sweet_user_cache_expiration_seconds: int = 3600 # 1 hour
 db_lock = threading.Lock()
+
+class UUIDGenerator:
+    @staticmethod
+    def generate_uuid() -> str:
+        return str(uuid.uuid4())
 
 class BoolConvert:
     @staticmethod
@@ -62,14 +68,111 @@ def database_transaction(func): # This is a decorator that wraps a function in a
 @database_transaction
 def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     '''Initializes the database.'''
+    cur.execute("CREATE TABLE IF NOT EXISTS user_master (internal_user_id TEXT PRIMARY KEY NOT NULL, discord_id INTEGER, sweet_id TEXT, twitch_id TEXT);")
     cur.execute("CREATE TABLE IF NOT EXISTS api_data (auth_token TEXT, auth_expiration TEXT);")
     cur.execute("CREATE TABLE IF NOT EXISTS ocr_reader_channels (guild_id INTEGER, channel_id INTEGER, PRIMARY KEY(guild_id, channel_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_partial_cache (sweet_id TEXT PRIMARY KEY NOT NULL, display_name TEXT, last_updated TEXT);")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_cache (sweet_id TEXT PRIMARY KEY NOT NULL, json_data TEXT, last_updated TEXT, FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_discord_links (discord_id INTEGER NOT NULL, sweet_id TEXT NOT NULL, PRIMARY KEY (discord_id, sweet_id), FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
-
+    cur.execute("CREATE TABLE IF NOT EXISTS duo_teams (duo_id TEXT PRIMARY KEY NOT NULL, duo_name TEXT, team_member_id_1 TEXT NOT NULL, team_member_id_2 TEXT NOT NULL, FOREIGN KEY (team_member_id_1) REFERENCES user_master(internal_user_id), FOREIGN KEY (team_member_id_2) REFERENCES user_master(internal_user_id));")
 
 init_scrim_db()
+
+### USERS ###
+
+class ScrimUser:
+    scrim_id: str
+    discord_id: Union[int, None]
+    sweet_id: Union[str, None]
+    twitch_id: Union[str, None]
+
+    def __init__(self, scrim_id: str, discord_id: Union[int, None] = None, sweet_id: Union[str, None] = None, twitch_id: Union[str, None] = None):
+        self.scrim_id = scrim_id
+        self.discord_id = discord_id
+        self.sweet_id = sweet_id
+        self.twitch_id = twitch_id
+    
+    def __str__(self) -> str:
+        return f"ScrimUser: {self.scrim_id} - Discord ID: {self.discord_id} - Sweet ID: {self.sweet_id} - Twitch ID: {self.twitch_id}"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+
+class ScrimUsers:
+    
+        
+    @staticmethod
+    @database_transaction
+    def insert_user_from_discord(cur, discord_user: Union[discord.Member, discord.User, int]) -> None:
+        '''Inserts a user into the database from a Discord object if they do not exist.'''
+        if isinstance(discord_user, discord.Member) or isinstance(discord_user, discord.User):
+            discord_user = discord_user.id
+        cur.execute("SELECT * FROM user_master WHERE discord_id = ?;", (discord_user,))
+        result = cur.fetchone()
+        if result is not None:
+            return
+        scrim_logger.debug(f"Inserting user with Discord ID: \"{discord_user}\" into the database.")
+        cur.execute("INSERT INTO user_master (internal_user_id, discord_id) VALUES (?, ?);", (UUIDGenerator.generate_uuid(), discord_user))
+    
+    @staticmethod
+    @database_transaction
+    def get_user_by_discord_id(cur, discord_user: Union[discord.Member, discord.User, int]) -> Union[ScrimUser, None]:
+        '''Gets a user from the database by Discord ID.'''
+        if isinstance(discord_user, discord.Member) or isinstance(discord_user, discord.User):
+            discord_user = discord_user.id
+        cur.execute("SELECT * FROM user_master WHERE discord_id = ?;", (discord_user,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return ScrimUser(result[0], result[1], result[2], result[3])
+    
+    @staticmethod
+    @database_transaction
+    def get_user_by_sweet_id(cur, sweet_id: str) -> Union[ScrimUser, None]:
+        '''Gets a user from the database by Sweet ID.'''
+        cur.execute("SELECT * FROM user_master WHERE sweet_id = ?;", (sweet_id,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return ScrimUser(result[0], result[1], result[2], result[3])
+    
+    @staticmethod
+    @database_transaction
+    def get_user_by_twitch_id(cur, twitch_id: str) -> Union[ScrimUser, None]:
+        '''Gets a user from the database by Twitch ID.'''
+        cur.execute("SELECT * FROM user_master WHERE twitch_id = ?;", (twitch_id,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return ScrimUser(result[0], result[1], result[2], result[3])
+    
+    @staticmethod
+    @database_transaction
+    def get_user_by_id(cur, internal_id: str) -> Union[ScrimUser, None]:
+        '''Gets a user from the database by internal ID.'''
+        cur.execute("SELECT * FROM user_master WHERE internal_user_id = ?;", (internal_id,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return ScrimUser(result[0], result[1], result[2], result[3])
+    
+    def connect_discord_to_id(cur, internal_id: str, discord_user: Union[discord.Member, discord.User, int]) -> None:
+        '''Connects a Discord ID to an internal ID.'''
+        if isinstance(discord_user, discord.Member) or isinstance(discord_user, discord.User):
+            discord_user = discord_user.id
+        cur.execute("UPDATE user_master SET discord_id = ? WHERE internal_user_id = ?;", (discord_user, internal_id))
+
+    def connect_sweet_to_id(cur, internal_id: str, sweet_id: str) -> None:
+        '''Connects a Sweet ID to an internal ID.'''
+        cur.execute("UPDATE user_master SET sweet_id = ? WHERE internal_user_id = ?;", (sweet_id, internal_id))
+    
+    def connect_twitch_to_id(cur, internal_id: str, twitch_id: str) -> None:
+        '''Connects a Twitch ID to an internal ID.'''
+        cur.execute("UPDATE user_master SET twitch_id = ? WHERE internal_user_id = ?;", (twitch_id, internal_id))
+
+    
+
+
 
 ### DECEIVE API ###
 

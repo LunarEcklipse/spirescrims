@@ -7,6 +7,8 @@ from queue import Queue
 import discord
 from discord.ext import commands, tasks
 import lib.scrim_sysinfo as scrim_sysinfo
+from lib.scrim_logging import scrim_logger
+from lib.scrim_sqlite import ScrimUsers
 
 channel_id_list: List[int] = [1224071523187425320, 1256544655072428113, 1224071542854516739, 1266861462085959800] # Add your channel IDs here
 warnings.filterwarnings("ignore", category=FutureWarning, module="easyocr")
@@ -44,7 +46,19 @@ class MatchScore:
 
     def is_score_uncertain(self) -> bool:
         '''Returns whether the score is uncertain.'''
-        return not self.eliminations_known or not self.terminals_disabled_known or not self.allies_revived_known
+        return not self.eliminations_known or not self.terminals_disabled_known or not self.allies_revived_known or self.is_eliminations_weird() or self.is_vault_terminals_disabled_weird() or self.is_allies_revived_weird()
+
+    def is_eliminations_weird(self) -> bool:
+        '''Returns whether the eliminations value is weird.'''
+        return self.eliminations < 0 or self.eliminations > 9
+    
+    def is_vault_terminals_disabled_weird(self) -> bool:
+        '''Returns whether the vault terminals disabled value is weird.'''
+        return self.vault_terminals_disabled < 0 or self.vault_terminals_disabled > 3
+    
+    def is_allies_revived_weird(self) -> bool:
+        '''Returns whether the allies revived value is weird.'''
+        return self.allies_revived < 0 or self.allies_revived > 6
 
     def _get_elimination_score_formatted(self) -> Union[str, None]:
         '''Returns the Elimination score as a formatted string.'''
@@ -56,6 +70,8 @@ class MatchScore:
             case 1:
                 return '1 Elimination: 1'
             case _:
+                if self.is_eliminations_weird():
+                    return f'{self.eliminations} Eliminations: {self.eliminations} **(Requires Validation)**'
                 return f'{self.eliminations} Eliminations: {self.eliminations}'
     
     def _get_vault_entered_score_formatted(self) -> Union[str, None]:
@@ -72,6 +88,8 @@ class MatchScore:
             case 1:
                 return '1 Vault Terminal Disabled: 1'
             case _:
+                if self.is_vault_terminals_disabled_weird():
+                    return f'{self.vault_terminals_disabled} Vault Terminals Disabled: {self.vault_terminals_disabled} **(Requires Validation)**'
                 return f'{self.vault_terminals_disabled} Vault Terminals Disabled: {self.vault_terminals_disabled}'
 
     def _get_allies_revived_score_formatted(self) -> Union[str, None]:
@@ -84,6 +102,8 @@ class MatchScore:
             case 1:
                 return '1 Ally Revived: -1'
             case _:
+                if self.is_allies_revived_weird():
+                    return f'{self.allies_revived} Allies Revived: -{self.allies_revived} **(Requires Validation)**'
                 return f'{self.allies_revived} Allies Revived: -{self.allies_revived}'
 
     def _get_last_spy_standing_score_formatted(self) -> Union[str, None]:
@@ -145,7 +165,28 @@ class MatchScore:
             emb.set_image(url=image_url)
         emb.set_footer(text="Calculated by Scrims Helper")
         return emb
-        
+
+class ImageProcessError:
+    image: Image
+    message: discord.Message
+    attachment_url: str
+
+    def __init__(self, image: Image, message: discord.Message, attachment_url: str):
+        if isinstance(image, Image.Image):
+            self.image = image
+        else:
+            self.image = Image.open(io.BytesIO(image))
+        self.message = message
+        self.attachment_url = attachment_url
+
+    def create_embed(self) -> discord.Embed:
+        emb: discord.Embed = discord.Embed(title="Error Processing Image", color=0xff0000, timestamp=datetime.now())
+        emb.description = "An error occurred during the processing of this image. The developer has been notified of the error. Please manually verify the results of this image."
+        emb.set_author(name="Scoreboard Analysis")
+        emb.set_footer(text="Calculated by Scrims Helper")
+        emb.set_image(url=self.attachment_url)
+        return emb
+
 class ImageProcessTask:
     image: Image
     message: discord.Message
@@ -165,13 +206,15 @@ class OCRReaderProcess:
     reader: easyocr.Reader
     read_queue: Queue
     results_queue: Queue
+    error_queue: Queue
     thread: Thread
     thread_name: str
     ocr_ready: bool
 
-    def __init__(self, read_queue: Queue, results_queue: Queue, thread_name: str):
+    def __init__(self, read_queue: Queue, results_queue: Queue, error_queue: Queue, thread_name: str):
         self.read_queue = read_queue
         self.results_queue = results_queue
+        self.error_queue = error_queue
         self.thread_name = thread_name
         self.ocr_ready = False
         self.thread = Thread(target=self._read_image_process, name=self.thread_name)
@@ -183,8 +226,10 @@ class OCRReaderProcess:
         `img` : Image - The image to resize.
         `size` : int - The size of the shortest side.'''
         if min(img.size) <= size:
+            scrim_logger.debug("Image is already smaller than the target size.")
             return img
         width, height = img.size
+        new_height, new_width = 0, 0
         if width < height:
             ratio = size / width
             new_width = size
@@ -193,6 +238,7 @@ class OCRReaderProcess:
             ratio = size / height
             new_height = size
             new_width = int(width * ratio)
+        scrim_logger.debug(f"Resizing Image to {new_width}x{new_height}")
         return img.resize((new_width, new_height))
 
     def _find_num_eliminations(self, text: Union[List[str], str, None]) -> Union[int, None]:
@@ -214,6 +260,7 @@ class OCRReaderProcess:
                 return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
             match = pattern2.search(line) # If we reach here, we can't read the number and thus should report -1 to indicate an unknown result.
             if match:
+                scrim_logger.debug(f"Eliminations was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
                 return -1
         return None
 
@@ -257,6 +304,7 @@ class OCRReaderProcess:
                 return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
             match = pattern2.search(line) # Backup, report unknown
             if match:
+                scrim_logger.debug(f"Vault Terminals Disabled was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
                 return -1
         return None
 
@@ -306,7 +354,7 @@ class OCRReaderProcess:
             return None
         # Create the regex pattern
         pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?ally ?revived')
-        pattern2 = re.compile(r'ally ?revived') # Our backup regex
+        pattern2 = re.compile(r'[Tt]?\s?ally ?r+evived') # Our backup regex
         if type(text) == str:
             text = [text]
         for line in text:
@@ -319,6 +367,7 @@ class OCRReaderProcess:
                 return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
             match = pattern2.search(line) # Backup, report unknown
             if match:
+                scrim_logger.debug(f"Allies Revived was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
                 return -1
         return None
     
@@ -352,48 +401,62 @@ class OCRReaderProcess:
             match_score.total_score -= allies_revived if allies_revived != -1 else 0
             match_score.allies_revived = allies_revived
             match_score.allies_revived_known = True if allies_revived != -1 else False
+        scrim_logger.debug(f"Calculated Match Score: {str(match_score.total_score)}")
         return match_score
 
     def _read_image_process(self):
+        '''The main image processing loop for the OCR reader process.'''
+        scrim_logger.debug(f"Starting OCR Reader Process for Thread: {self.thread_name}")
         self.reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
+        scrim_logger.debug(f"OCR Reader Process Initialized for Thread: {self.thread_name}")
         self.ocr_ready = True
-        try:
-            while True:
-                image_task: ImageProcessTask = self.read_queue.get(block=True) # Wait until an image becomes available for the processor
-                image_task.image = self._resize_image_shortest_side(image_task.image, 720)
-                image_buffer = io.BytesIO()
-                image_task.image.save(image_buffer, format='PNG')
-                image_buffer.seek(0)
-                result = self.reader.readtext(image_buffer.getvalue())
-                raw_result: list = []
-                for detection in result:
-                    raw_result.append(detection[1])
-                image_task.score = self._calculate_score_from_text(raw_result)
-                self.results_queue.put(image_task)
-        except Exception as e:
-            ocr_ready = False
-            print(e)
+        while True:
+            try:
+                while True:
+                    image_task: ImageProcessTask = self.read_queue.get(block=True) # Wait until an image becomes available for the processor
+                    image_task.image = self._resize_image_shortest_side(image_task.image, 720)
+                    image_buffer = io.BytesIO()
+                    image_task.image.save(image_buffer, format='PNG')
+                    image_buffer.seek(0)
+                    result = self.reader.readtext(image_buffer.getvalue())
+                    raw_result: list = []
+                    for detection in result:
+                        raw_result.append(detection[1])
+                    image_task.score = self._calculate_score_from_text(raw_result)
+                    self.results_queue.put(image_task)
+            except Exception as e:
+                ocr_ready = False
+                scrim_logger.error(e)
+                self.error_queue.put(ImageProcessError(image_task.image, image_task.message, image_task.attachment_url))
+                scrim_logger.debug(f"Restarting OCR Reader Process for Thread: {self.thread_name}")
+                self.reader = None # Clear out and then restart the reader to clear any issues.
+                self.reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
+                scrim_logger.debug(f"OCR Reader Process Restarted for Thread: {self.thread_name}")
+                ocr_ready = True
 
 class ScrimReader(commands.Cog):
     bot: discord.Bot
     reader_processes: List[OCRReaderProcess]
     read_queue: Queue
     results_queue: Queue
+    error_queue: Queue
     
     def __init__(self, bot: discord.Bot):
         self.bot = bot
-        self.read_queue, self.results_queue = Queue(), Queue()
+        self.read_queue, self.results_queue, self.error_queue = Queue(), Queue(), Queue()
         self.reader_processes = [] # List of reader processes - This needs to be initialized in __main__ to avoid issues with forking
         self.spawn_processes()
 
     def cog_unload(self):
+        scrim_logger.debug("Killing OCR Reader Processes...")
         for p in self.reader_processes:
             p.terminate()
             p.join()
 
     def spawn_processes(self, num_ocr_processes: int = 8):
+        scrim_logger.debug(f"Attempting to spawn {str(num_ocr_processes)} OCR Reader Processes...")
         for i in range(num_ocr_processes):
-            self.reader_processes.append(OCRReaderProcess(self.read_queue, self.results_queue, f"OCRReaderProcess_{i}"))
+            self.reader_processes.append(OCRReaderProcess(self.read_queue, self.results_queue, self.error_queue, f"OCRReaderProcess_{i}"))
 
     ### READER FUNCTIONS ###
 
@@ -586,6 +649,8 @@ class ScrimReader(commands.Cog):
             return
         if message.author.bot:
             return
+        # Insert the user into the database if they don't exist
+        ScrimUsers.insert_user_from_discord(message.author)
         if len(message.attachments) > 0:
             for attachment in message.attachments:
                 if attachment.content_type.startswith('image'):
@@ -598,3 +663,6 @@ class ScrimReader(commands.Cog):
         while not self.results_queue.empty():
             task: ImageProcessTask = self.results_queue.get()
             await task.edit_message("", task.score.create_embed(task.attachment_url))
+        while not self.error_queue.empty():
+            task: ImageProcessError = self.error_queue.get()
+            await task.message.edit(content="", embed=task.create_embed())

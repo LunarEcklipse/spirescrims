@@ -1,14 +1,12 @@
 from lib.DI_API_Obj.sweet_user import SweetUser
 from lib.DI_API_Obj.gamemode import GameMode
 from PIL import Image
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Dict
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io
-
-
 
 class ScrimPieCharts:
     @staticmethod

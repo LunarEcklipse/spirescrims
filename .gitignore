@@ -7,3 +7,5 @@ bot/rsc/spire_scrims.db
 /venv/*
 .vscode/*
 .vscode/settings.json
+/bot/logs/*.log
+/bot/rsc/banlist.json
