@@ -96,7 +96,7 @@ class MatchScore:
 
     def has_no_score_events(self) -> bool:
         '''Returns whether the MatchScore has no score-affecting events.'''
-        return self.eliminations == 0 and self.vault_terminals_disabled == 0 and self.allies_revived == 0 and not self.vault_entered and not self.last_spy_standing and not self.extract
+        return self.eliminations == 0 and self.vault_terminals_disabled == 0 and self.allies_revived == 0 and not self.vault_entered and not self.last_spy_standing and not self.extracted
     
     def __repr__(self) -> str:
         return f"MatchScore(total_score={self.total_score}, eliminations={self.eliminations}, vault_terminals_disabled={self.vault_terminals_disabled}, allies_revived={self.allies_revived}, vault_entered={self.vault_entered}, last_spy_standing={self.last_spy_standing}, extracted={self.extracted})"
