@@ -1,6 +1,6 @@
 import os, sys
 from typing import Optional
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from discord.ext import commands
 from lib.scrim_playerstats import ScrimPieCharts, ScrimPlots
 from lib.DI_API_Obj.gamemode import GameMode
@@ -9,7 +9,7 @@ from PIL import Image
 absPath: str = os.path.abspath(__file__) # This little chunk makes sure the working directory is correct.
 dname: str = os.path.dirname(absPath)
 os.chdir(dname)
-load_dotenv()
+load_dotenv(find_dotenv())
 
 import discord, asyncio, logging
 from datetime import datetime, timedelta, timezone
