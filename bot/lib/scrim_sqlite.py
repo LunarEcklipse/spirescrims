@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from contextlib import closing
 from lib.DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
 from lib.scrim_logging import scrim_logger
+from lib.obj.scrim_user import ScrimUser
 
 sqlean.extensions.enable_all()
 
@@ -80,27 +81,7 @@ init_scrim_db()
 
 ### USERS ###
 
-class ScrimUser:
-    scrim_id: str
-    discord_id: Union[int, None]
-    sweet_id: Union[str, None]
-    twitch_id: Union[str, None]
-
-    def __init__(self, scrim_id: str, discord_id: Union[int, None] = None, sweet_id: Union[str, None] = None, twitch_id: Union[str, None] = None):
-        self.scrim_id = scrim_id
-        self.discord_id = discord_id
-        self.sweet_id = sweet_id
-        self.twitch_id = twitch_id
-    
-    def __str__(self) -> str:
-        return f"ScrimUser: {self.scrim_id} - Discord ID: {self.discord_id} - Sweet ID: {self.sweet_id} - Twitch ID: {self.twitch_id}"
-    
-    def __repr__(self) -> str:
-        return self.__str__()
-
-class ScrimUsers:
-    
-        
+class ScrimUserData:
     @staticmethod
     @database_transaction
     def insert_user_from_discord(cur, discord_user: Union[discord.Member, discord.User, int]) -> None:

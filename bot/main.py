@@ -16,6 +16,8 @@ from discord.commands import Option
 import lib.scrim_reader as scrim_reader
 import lib.scrim_sysinfo as scrim_sysinfo
 import lib.scrim_di_api as scrim_di_api
+from lib.scrim_sqlite import ScrimUserData
+from lib.obj.scrim_user import ScrimUser
 from lib.scrim_logging import scrim_logger
 from lib.scrim_playerstats import ScrimPieCharts, ScrimPlots
 from lib.DI_API_Obj.gamemode import GameMode
@@ -38,6 +40,17 @@ else:
 @bot.event
 async def on_ready():
     scrim_logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})') #type: ignore
+    # Iterate through the guilds the bot is in and get their members
+    for guild in bot.guilds:
+        for member in guild.members:
+            if member.bot:
+                continue
+            # Check if the user is in the database
+            if ScrimUserData.get_user_by_discord_id(member) == None:
+                # If not, add them to the database
+                ScrimUserData.insert_user_from_discord(member)
+
+
     api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET")) #type: ignore
     sw = await api.get_user("1jii7052-k048-6392-1kk4-784il9l47khj")
     # im = ScrimPlots.calculate_agent_pickrates_over_seasons(sw)

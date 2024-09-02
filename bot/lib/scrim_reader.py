@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands, tasks
 import lib.scrim_sysinfo as scrim_sysinfo
 from lib.scrim_logging import scrim_logger
-from lib.scrim_sqlite import ScrimUsers
+from lib.scrim_sqlite import ScrimUserData
 
 channel_id_list: List[int] = [1224071523187425320, 1256544655072428113, 1224071542854516739, 1266861462085959800] # Add your channel IDs here
 warnings.filterwarnings("ignore", category=FutureWarning, module="easyocr")
@@ -35,6 +35,10 @@ class MatchScore:
                  extracted: bool = False):
         self.total_score = total_score
         self.eliminations = eliminations if eliminations is not None else 0
+        if self.is_eliminations_wrong():
+            self.match_score -= self.eliminations
+            self.eliminations = -1
+            eliminations_known = False
         self.eliminations_known = False if self.eliminations == -1 else True
         self.vault_terminals_disabled = vault_terminals_disabled if vault_terminals_disabled is not None else 0
         self.terminals_disabled_known = False if self.vault_terminals_disabled == -1 else True
@@ -51,6 +55,10 @@ class MatchScore:
     def is_eliminations_weird(self) -> bool:
         '''Returns whether the eliminations value is weird.'''
         return self.eliminations < 0 or self.eliminations > 9
+    
+    def is_eliminations_wrong(self) -> bool:
+        '''Returns whether the eliminations value is wrong. This triggers at values higher than 36 which is the theoretical maximum number of eliminations one could get in a match.'''
+        return self.eliminations > 36
     
     def is_vault_terminals_disabled_weird(self) -> bool:
         '''Returns whether the vault terminals disabled value is weird.'''
@@ -71,7 +79,8 @@ class MatchScore:
                 return '1 Elimination: 1'
             case _:
                 if self.is_eliminations_weird():
-                    return f'{self.eliminations} Eliminations: {self.eliminations} **(Requires Validation)**'
+                    if self.is_eliminations_wrong():
+                        return f'{self.eliminations} Eliminations: {self.eliminations} **(Requires Validation)**'
                 return f'{self.eliminations} Eliminations: {self.eliminations}'
     
     def _get_vault_entered_score_formatted(self) -> Union[str, None]:
@@ -650,7 +659,7 @@ class ScrimReader(commands.Cog):
         if message.author.bot:
             return
         # Insert the user into the database if they don't exist
-        ScrimUsers.insert_user_from_discord(message.author)
+        ScrimUserData.insert_user_from_discord(message.author)
         if len(message.attachments) > 0:
             for attachment in message.attachments:
                 if attachment.content_type.startswith('image'):
