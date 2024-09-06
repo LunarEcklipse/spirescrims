@@ -13,6 +13,14 @@ class DeceiveIncAPIResponseError(Exception):
         self.message = message
         super().__init__(f"DeceiveInc API returned status {status}: {message}")
 
+class DeceiveIncAPINotFoundError(Exception):
+    def __init__(self, user_id: str):
+        super().__init__(f"DeceiveInc API was unable to find the user ID: {user_id}")
+
+class DeceiveIncInvalidAPICredentialsError(Exception):
+    def __init__(self):
+        super().__init("Invalid API credentials were provided to the DeceiveInc API client.")
+
 class DeceiveIncAPIClient:
     _session: Optional[aiohttp.ClientSession]
     _access_token: Optional[str]
@@ -54,7 +62,13 @@ class DeceiveIncAPIClient:
             "client_id": self._client_id,
             "client_secret": self._client_secret
         }) as response:
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except aiohttp.ClientResponseError as e:
+                if e.status == 401:
+                    raise DeceiveIncInvalidAPICredentialsError()
+                else:
+                    raise DeceiveIncAPIResponseError(e.status, "An error occurred while refreshing the access token.")
             data = await response.json()
             self._access_token = data["access_token"]
             self._token_expiration_time = datetime.now(timezone.utc) + timedelta(seconds=data["expires_in"])
@@ -106,7 +120,7 @@ class DeceiveIncAPIClient:
             except aiohttp.ClientResponseError as e:
                 if e.status == 401: # The token needs to be refreshed and tried again
                     if retry: # If we've already tried refreshing the token, raise the error
-                        raise DeceiveIncAPIResponseError(e.status, "The access token is invalid.")
+                        raise DeceiveIncInvalidAPICredentialsError()
                     await self._refresh_access_token()
                     return await self.search_users(query, True)
             data = await response.json()

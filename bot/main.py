@@ -10,7 +10,7 @@ dname: str = os.path.dirname(absPath)
 os.chdir(dname)
 load_dotenv(find_dotenv())
 
-import discord, asyncio, logging
+import discord, asyncio, logging, easyocr
 from datetime import datetime, timedelta, timezone
 from discord.commands import Option
 import lib.scrim_reader as scrim_reader
@@ -22,6 +22,7 @@ from lib.scrim_logging import scrim_logger
 from lib.scrim_playerstats import ScrimPieCharts, ScrimPlots
 from lib.DI_API_Obj.gamemode import GameMode
 from lib.scrim_userupdatelistener import ScrimUserUpdateListener
+from lib.scrim_teammanagement import ScrimTeamManager
 
 scrims_version: str = "1.0.4"
 
@@ -36,9 +37,13 @@ if scrim_sysinfo.cpu_is_x86() and not scrim_sysinfo.cpu_supports_avx2():
 else:
     scrim_logger.info("Initializing Reader modules, this may take several minutes...")
     scrim_logger.debug("Initializing ScrimReader Cog...")
+    model_download = easyocr.Reader(['en'], download_enabled=True) # We create this at the very beginning to ensure the model is downloaded. By doing it here we avoid a potential crash if the model isn't downloaded as it will try and complete on multiple threads
+    del model_download # Then we delete it to keep memory usage low
     bot.add_cog(scrim_reader.ScrimReader(bot))
 scrim_logger.info("Initializing User Update Listeners...")
 bot.add_cog(ScrimUserUpdateListener(bot))
+scrim_logger.info("Initializing Team Management Cog...")
+bot.add_cog(ScrimTeamManager(bot))
 
 @bot.event
 async def on_ready():

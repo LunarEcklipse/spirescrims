@@ -75,8 +75,8 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_partial_cache (sweet_id TEXT PRIMARY KEY NOT NULL, display_name TEXT, last_updated TEXT);")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_cache (sweet_id TEXT PRIMARY KEY NOT NULL, json_data TEXT, last_updated TEXT, FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_discord_links (discord_id INTEGER NOT NULL, sweet_id TEXT NOT NULL, PRIMARY KEY (discord_id, sweet_id), FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS duo_teams (duo_id TEXT PRIMARY KEY NOT NULL, duo_name TEXT, team_member_id_1 TEXT NOT NULL, team_member_id_2 TEXT NOT NULL, FOREIGN KEY (team_member_id_1) REFERENCES scrim_users(internal_user_id), FOREIGN KEY (team_member_id_2) REFERENCES scrim_users(internal_user_id));")
-
+    cur.execute("CREATE TABLE IF NOT EXISTS teams_master (team_id TEXT PRIMARY KEY NOT NULL, team_name TEXT NOT NULL, team_guild INTEGER NOT NULL);")
+    cur.execute("CREATE TABLE IF NOT EXISTS team_members (team_id TEXT NOT NULL, user_id TEXT NOT NULL, is_owner INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams_master(team_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
 init_scrim_db()
 
 ### USERS ###
@@ -172,6 +172,40 @@ class ScrimUserData:
         if isinstance(discord_user, discord.Member) or isinstance(discord_user, discord.User):
             discord_user = discord_user.id
         cur.execute("UPDATE scrim_users SET username = ? WHERE discord_id = ?;", (username, discord_user))
+
+class ScrimTeams:
+    @staticmethod
+    @database_transaction
+    def create_team(cur, team_name: str, team_owner: Union[ScrimUser, discord.User, discord.Member], team_members: List[Union[ScrimUser, discord.User, discord.Member]], team_guild: Union[discord.Guild, int]) -> str:
+        '''Creates a team.'''
+        if isinstance(team_guild, discord.Guild):
+            team_guild = team_guild.id
+        team_id = UUIDGenerator.generate_uuid()
+        cur.execute("INSERT INTO teams_master (team_id, team_name) VALUES (?, ?);", (team_id, team_name, team_guild))
+        for member in team_members:
+            if isinstance(member, discord.Member) or isinstance(member, discord.User):
+                member = cur.execute("SELECT * FROM scrim_users WHERE discord_id = ?;", (member.id,)).fetchone()
+                if member is None:
+                    # Create the member
+                    cur.execute("INSERT INTO scrim_users (internal_user_id, username, discord_id) VALUES (?, ?, ?);", (UUIDGenerator.generate_uuid(), member.name, member.id))
+                    member = cur.execute("SELECT * FROM scrim_users WHERE discord_id = ?;", (member.id,)).fetchone()
+            cur.execute("INSERT INTO team_members (team_id, user_id, is_owner) VALUES (?, ?, ?);", (team_id, member[0], BoolConvert.convert_bool_to_int(member[0] == team_owner[0])))
+            if isinstance(team_owner, discord.Member) or isinstance(team_owner, discord.User):
+                team_owner = ScrimUserData.get_user_by_discord_id(cur, team_owner)
+            member_scrimusers = []
+            for member in team_members:
+                if isinstance(member, discord.Member) or isinstance(member, discord.User):
+                    member = cur.execute("SELECT * FROM scrim_users WHERE discord_id = ?;", (member.id,)).fetchone()
+                    if member is None:
+                        # Create the member
+                        cur.execute("INSERT INTO scrim_users (internal_user_id, username, discord_id) VALUES (?, ?, ?);", (UUIDGenerator.generate_uuid(), member.name, member.id))
+                        member = cur.execute("SELECT * FROM scrim_users WHERE discord_id = ?;", (member.id,)).fetchone()
+                member_scrimusers.append(member)
+            for member in member_scrimusers:
+                cur.execute("INSERT INTO team_members (team_id, user_id, is_owner) VALUES (?, ?, ?);", (team_id, member.internal_user_id, BoolConvert.convert_bool_to_int()))
+        return team_id
+    
+    
 
 ### DECEIVE API ###
 
@@ -330,11 +364,16 @@ class DeceiveReaderActiveChannels:
         cur.execute("SELECT * FROM active_channels;")
         results = cur.fetchall()
         return [result[0] for result in results]
+        
 
     @staticmethod
     @database_transaction
-    def add_active_channel(cur, channel_id: int) -> None:
+    def add_active_channel(cur, channel_id: Union[discord.TextChannel, discord.ForumChannel, discord.VoiceChannel, discord.GroupChannel, discord.StageChannel, int]) -> None:
         '''Adds an active channel to the database.'''
+        if isinstance(channel_id, discord.TextChannel) or isinstance(channel_id, discord.ForumChannel) or isinstance(channel_id, discord.VoiceChannel) or isinstance(channel_id, discord.GroupChannel) or isinstance(channel_id, discord.StageChannel):
+            channel_id = channel_id.id
+        if cur.execute("SELECT * FROM active_channels WHERE channel_id = ?;", (channel_id,)).fetchone() is not None:
+            return
         cur.execute("INSERT INTO active_channels (channel_id) VALUES (?);", (channel_id,))
 
     @staticmethod

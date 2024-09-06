@@ -8,9 +8,13 @@ import discord
 from discord.ext import commands, tasks
 import lib.scrim_sysinfo as scrim_sysinfo
 from lib.scrim_logging import scrim_logger
-from lib.scrim_sqlite import ScrimUserData
+from lib.scrim_sqlite import ScrimUserData, DeceiveReaderActiveChannels
 
 channel_id_list: List[int] = [1224071523187425320, 1256544655072428113, 1224071542854516739, 1266861462085959800] # Add your channel IDs here
+for i in channel_id_list:
+    DeceiveReaderActiveChannels.add_active_channel(i)
+
+# Suppress FutureWarnings from EasyOCR because we can't do anything about them
 warnings.filterwarnings("ignore", category=FutureWarning, module="easyocr")
 
 class MatchScore:
@@ -449,10 +453,13 @@ class ScrimReader(commands.Cog):
     read_queue: Queue
     results_queue: Queue
     error_queue: Queue
+    channel_id_list: List[int]
+    channel_list: List[Union[discord.TextChannel, discord.VoiceChannel, discord.ForumChannel, discord.StageChannel]]
     
     def __init__(self, bot: discord.Bot):
         self.bot = bot
         self.read_queue, self.results_queue, self.error_queue = Queue(), Queue(), Queue()
+        self.channel_id_list = DeceiveReaderActiveChannels.get_active_channels()
         self.reader_processes = [] # List of reader processes - This needs to be initialized in __main__ to avoid issues with forking
         self.spawn_processes()
 
@@ -654,7 +661,7 @@ class ScrimReader(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         # Check if the channel is in the list of channels
-        if message.channel.id not in channel_id_list:
+        if message.channel.id not in self.channel_id_list:
             return
         if message.author.bot:
             return
