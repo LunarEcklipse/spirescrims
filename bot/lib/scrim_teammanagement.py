@@ -1,6 +1,7 @@
 import discord
 from discord import guild_only
 from discord.ext import commands
+from lib.scrim_sqlite import ScrimUserData, ScrimTeams
 
 class ScrimTeamManager(commands.Cog):
     def __init__(self, bot):
@@ -12,6 +13,12 @@ class ScrimTeamManager(commands.Cog):
     @team_commands.command(name="list", description="List all scrim teams you are in.")
     @guild_only()
     async def list_teams(self, ctx: discord.ApplicationContext):
+        guild_id = ctx.guild.id
+        scrim_user = ScrimUserData.get_user_by_discord_id(ctx.author)
+        if scrim_user is None:
+            ScrimUserData.insert_user_from_discord(ctx.author, ctx.author)
+            ctx.respond("You are not part of any teams.", ephemeral=True)
+            return 
         ctx.respond("You've discovered a WIP feature! This isn't quite implemented yet, so not much is happening.", ephemeral=True)
 
     @team_commands.command(name="create", description="Create a new scrim team.")

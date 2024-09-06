@@ -361,7 +361,7 @@ class DeceiveReaderActiveChannels:
     @database_transaction
     def get_active_channels(cur) -> List[int]:
         '''Gets the active channels from the database.'''
-        cur.execute("SELECT * FROM active_channels;")
+        cur.execute("SELECT * FROM ocr_reader_channels;")
         results = cur.fetchall()
         return [result[0] for result in results]
         
@@ -372,12 +372,12 @@ class DeceiveReaderActiveChannels:
         '''Adds an active channel to the database.'''
         if isinstance(channel_id, discord.TextChannel) or isinstance(channel_id, discord.ForumChannel) or isinstance(channel_id, discord.VoiceChannel) or isinstance(channel_id, discord.GroupChannel) or isinstance(channel_id, discord.StageChannel):
             channel_id = channel_id.id
-        if cur.execute("SELECT * FROM active_channels WHERE channel_id = ?;", (channel_id,)).fetchone() is not None:
+        if cur.execute("SELECT * FROM ocr_reader_channels WHERE channel_id = ?;", (channel_id,)).fetchone() is not None:
             return
-        cur.execute("INSERT INTO active_channels (channel_id) VALUES (?);", (channel_id,))
+        cur.execute("INSERT INTO ocr_reader_channels (channel_id) VALUES (?);", (channel_id,))
 
     @staticmethod
     @database_transaction
     def remove_active_channel(cur, channel_id: int) -> None:
         '''Removes an active channel from the database.'''
-        cur.execute("DELETE FROM active_channels WHERE channel_id = ?;", (channel_id,))
+        cur.execute("DELETE FROM ocr_reader_channels WHERE channel_id = ?;", (channel_id,))
