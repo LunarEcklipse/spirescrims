@@ -363,7 +363,7 @@ class DeceiveReaderActiveChannels:
         '''Gets the active channels from the database.'''
         cur.execute("SELECT * FROM ocr_reader_channels;")
         results = cur.fetchall()
-        return [result[0] for result in results]
+        return [result[1] for result in results]
         
 
     @staticmethod
