@@ -30,8 +30,6 @@ intents = discord.Intents.all()
 
 bot = discord.Bot(intents=intents)
 
-print(scrim_sysinfo.system_has_gpu())
-
 scrim_logger.info(f"Starting Scrim Helper v{scrims_version}")
 # Initialize the ScrimReader cog
 if scrim_sysinfo.cpu_is_x86() and not scrim_sysinfo.cpu_supports_avx2():

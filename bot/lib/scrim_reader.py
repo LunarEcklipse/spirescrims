@@ -9,6 +9,7 @@ from discord.ext import commands, tasks
 import lib.scrim_sysinfo as scrim_sysinfo
 from lib.scrim_logging import scrim_logger
 from lib.scrim_sqlite import ScrimUserData, DeceiveReaderActiveChannels
+import lib.scrim_imageprocessing as scrim_imageprocessing
 
 channel_id_list: List[int] = [1224071523187425320, 1256544655072428113, 1224071542854516739, 1266861462085959800] # Add your channel IDs here
 for i in channel_id_list:
@@ -260,19 +261,32 @@ class OCRReaderProcess:
             return None
         # Create the regex pattern
         pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?eliminations?')
-        pattern2 = re.compile(r'eliminations?') # We assume 1 here, this is a last ditch backup effort
+        pattern2 = re.compile(r'(?i)eliminations ?= ?([0-9IiOo]+)') # We try and integer divide by 1 here
+        pattern3 = re.compile(r'eliminations?') # We assume 1 here, this is a last ditch backup effort
         if type(text) == str:
             text = [text]
         for line in text:
             # First make line lowercase
             line = line.lower()
             # Search for the pattern
-            match = pattern1.search(line)
-            if match:
+            text_match = pattern1.search(line)
+            if text_match:
                 # Get the number of eliminations on the front of the line
-                return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
-            match = pattern2.search(line) # If we reach here, we can't read the number and thus should report -1 to indicate an unknown result.
-            if match:
+                return int(text_match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
+            text_match = pattern2.search(line)
+            if text_match:
+                # Get the elimination score from the group and see if we can figure out from there
+                match int(text_match.group(1).lower().translate(str.maketrans("IiOo", "1100"))):
+                    case 0:
+                        return -1 # We can't determine it from a 0 score
+                    case 100: # This covers the most common failure case where the OCR can't read the 1.
+                        return 1
+                    case 160:
+                        return 1
+                    case _:
+                        return -1
+            text_match = pattern3.search(line) # If we reach here, we can't read the number and thus should report -1 to indicate an unknown result.
+            if text_match:
                 scrim_logger.debug(f"Eliminations was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
                 return -1
         return None
@@ -428,6 +442,7 @@ class OCRReaderProcess:
                 while True:
                     image_task: ImageProcessTask = self.read_queue.get(block=True) # Wait until an image becomes available for the processor
                     image_task.image = self._resize_image_shortest_side(image_task.image, 720)
+                    image_task.image = scrim_imageprocessing.binarize_image(image_task.image) # Binarize the image
                     image_buffer = io.BytesIO()
                     image_task.image.save(image_buffer, format='PNG')
                     image_buffer.seek(0)
