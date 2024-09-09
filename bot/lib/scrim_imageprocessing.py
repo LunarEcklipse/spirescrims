@@ -14,3 +14,7 @@ def binarize_image(image: Image.Image) -> Image.Image:
     _, image = cv2.threshold(image, 100, 255, cv2.THRESH_BINARY)
     return Image.fromarray(image)
     
+def denoise_image(image: Image.Image) -> Image.Image:
+    image = np.array(image)
+    image = cv2.fastNlMeansDenoising(image, None, 10, 7, 21)
+    return Image.fromarray(image)

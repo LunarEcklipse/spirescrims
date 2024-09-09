@@ -77,6 +77,7 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_discord_links (discord_id INTEGER NOT NULL, sweet_id TEXT NOT NULL, PRIMARY KEY (discord_id, sweet_id), FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS teams_master (team_id TEXT PRIMARY KEY NOT NULL, team_name TEXT NOT NULL, team_guild INTEGER NOT NULL);")
     cur.execute("CREATE TABLE IF NOT EXISTS team_members (team_id TEXT NOT NULL, user_id TEXT NOT NULL, is_owner INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams_master(team_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS player_stats (user_id TEXT PRIMARY KEY NOT NULL, mmr INTEGER NOT NULL, priority INTEGER NOT NULL, FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
 init_scrim_db()
 
 ### USERS ###

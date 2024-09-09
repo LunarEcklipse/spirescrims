@@ -20,11 +20,24 @@ from lib.scrim_sqlite import ScrimUserData
 from lib.obj.scrim_user import ScrimUser
 from lib.scrim_logging import scrim_logger
 from lib.scrim_playerstats import ScrimPieCharts, ScrimPlots
-from lib.DI_API_Obj.gamemode import GameMode
+from lib.obj.scrim_format import ScrimFormat
 from lib.scrim_userupdatelistener import ScrimUserUpdateListener
 from lib.scrim_teammanagement import ScrimTeamManager
+from lib.obj.scrim_matchgroups import ScrimMatchGroups
+from lib.scrim_matchmaking import ScrimMatchmaking
 
 scrims_version: str = "1.0.4"
+
+for i in range(32):
+    if i == 14:
+        pass
+    out = ScrimMatchmaking.calculate_lobby_sizes(i, ScrimFormat.SOLO)
+    if isinstance(out, ScrimMatchGroups):
+        print(f"Number of Players: {str(i)} - Lobbies: {out.lobby_sizes} - Waitlist: {out.waitlist_playercount}")
+    else:
+        print(f"Number of Players: {str(i)} - Not Enough Players")
+
+x = input()
 
 intents = discord.Intents.all()
 
