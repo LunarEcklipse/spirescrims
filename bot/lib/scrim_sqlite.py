@@ -6,6 +6,8 @@ from contextlib import closing
 from lib.DI_API_Obj.sweet_user import SweetUserPartial, SweetUser
 from lib.scrim_logging import scrim_logger
 from lib.obj.scrim_user import ScrimUser
+from lib.obj.scrim import Scrim
+from lib.obj.scrim_format import ScrimFormat
 
 sqlean.extensions.enable_all()
 
@@ -81,7 +83,9 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_checkin_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_dropout_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS scrims (scrim_id TEXT PRIMARY KEY NOT NULL, format INTEGER NOT NULL, is_active INTEGER NOT NULL);")
-    cur.execute("CREATE TABLE IF NOT EXISTS scrim_run_times (scrim_id TEXT NOT NULL, checkin_start_time TEXT NOT NULL, checkin_end_time TEXT NOT NULL, scrim_start_time TEXT NOT NULL, scrim_end_time TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
+    cur.execute("DROP TABLE IF EXISTS scrim_run_times;")
+    cur.execute("CREATE TABLE IF NOT EXISTS scrim_run_times (scrim_id TEXT NOT NULL, checkin_start_time TEXT NOT NULL, checkin_end_time TEXT NOT NULL, scrim_start_time TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS scrim_active_checkins (scrim_id TEXT NOT NULL, checkin_end_time TEXT NOT NULL), FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS solo_scrim_checkin (scrim_id TEXT NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS team_scrim_checkin (scrim_id TEXT NOT NULL, team_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(team_id) REFERENCES teams_master(team_id));")
 
@@ -234,7 +238,6 @@ class ScrimUserData:
         if result is None:
             return
         cur.execute("UPDATE player_stats SET priority = ? WHERE user_id = ?;", (result[0] + priority_adjustment, internal_id))
-    
 
 class ScrimTeams:
     @staticmethod
@@ -268,6 +271,13 @@ class ScrimTeams:
                 cur.execute("INSERT INTO team_members (team_id, user_id, is_owner) VALUES (?, ?, ?);", (team_id, member.internal_user_id, BoolConvert.convert_bool_to_int()))
         return team_id
     
+class Scrims:
+    @staticmethod
+    @database_transaction
+    def get_active_scrims(cur) -> List[Scrim]:
+        '''Gets all active scrims.'''
+        pass # TODO: Implement this
+
 class ScrimCheckin:
     @staticmethod
     @database_transaction

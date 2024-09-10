@@ -12,7 +12,7 @@ from lib.scrim_sqlite import ScrimUserData, DeceiveReaderActiveChannels
 from lib.scrim_args import ScrimArgs
 import lib.scrim_imageprocessing as scrim_imageprocessing
 
-channel_id_list: List[int] = [1224071523187425320, 1256544655072428113, 1224071542854516739, 1266861462085959800] # Add your channel IDs here
+channel_id_list: List[int] = []
 for i in channel_id_list:
     DeceiveReaderActiveChannels.add_active_channel(i)
 
