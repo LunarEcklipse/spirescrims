@@ -97,7 +97,7 @@ class ScrimUserData:
             return
         scrim_logger.debug(f"Inserting user with Discord ID: \"{discord_user}\" into the database.")
         player_id = UUIDGenerator.generate_uuid()
-        cur.execute("INSERT INTO scrim_users (internal_user_id, username, discord_id) VALUES (?, ?, ?);", (player_id, username, discord_user))
+        cur.execute("INSERT OR IGNORE INTO scrim_users (internal_user_id, username, discord_id) VALUES (?, ?, ?);", (player_id, username, discord_user))
         cur.execute("INSERT INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (player_id, mmr, priority))
     
     @staticmethod
@@ -113,7 +113,7 @@ class ScrimUserData:
         cur.execute("SELECT * FROM player_stats WHERE user_id = ?;", (result[0],)).fetchone()
         result_stats = cur.fetchone()
         if result_stats is None:
-            cur.execute("INSERT INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
+            cur.execute("INSERT OR IGNORE INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
             result_stats = (result[0], 1000, 0)
         return ScrimUser(result[0], result[1], result[2], result[3], result[4], result_stats[1], result_stats[2])
     
@@ -128,7 +128,7 @@ class ScrimUserData:
         cur.execute("SELECT * FROM player_stats WHERE user_id = ?;", (result[0],)).fetchone()
         result_stats = cur.fetchone()
         if result_stats is None:
-            cur.execute("INSERT INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
+            cur.execute("INSERT OR IGNORE INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
             result_stats = (result[0], 1000, 0)
         return ScrimUser(result[0], result[1], result[2], result[3], result[4])
     
@@ -143,7 +143,7 @@ class ScrimUserData:
         cur.execute("SELECT * FROM player_stats WHERE user_id = ?;", (result[0],)).fetchone()
         result_stats = cur.fetchone()
         if result_stats is None:
-            cur.execute("INSERT INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
+            cur.execute("INSERT OR IGNORE INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
             result_stats = (result[0], 1000, 0)
         return ScrimUser(result[0], result[1], result[2], result[3], result[4])
     
@@ -158,7 +158,7 @@ class ScrimUserData:
         cur.execute("SELECT * FROM player_stats WHERE user_id = ?;", (result[0],)).fetchone()
         result_stats = cur.fetchone()
         if result_stats is None:
-            cur.execute("INSERT INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
+            cur.execute("INSERT OR IGNORE INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
             result_stats = (result[0], 1000, 0)
         return ScrimUser(result[0], result[1], result[2], result[3], result[4])
     

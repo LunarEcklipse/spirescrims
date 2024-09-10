@@ -60,13 +60,28 @@ class ScrimMMR:
         '''
         Calculate the maximum MMR a group of players can gain in a match.
         '''
-        expected_performance = ScrimMMR.calculate_expected_performance_against_group(group, match)
-        return constant * (1 - expected_performance)
+        expected_performance = 0
+        self_found = False
+        expected_performance = 0
+        for opposing_group in match:
+            if group == opposing_group:
+                self_found = True
+                continue
+            expected_performance += ScrimMMR.calculate_expected_performance_against_group(group, opposing_group)
+        expected_performance /= len(match) - 1 if self_found else len(match)        
+        return int(constant * (1 - expected_performance))
     
     @staticmethod
     def calculate_maximum_mmr_loss(group: Union[ScrimUser, ScrimTeam], match: Union[List[ScrimUser], List[ScrimTeam]], constant: int = 32) -> int:
         '''
         Calculate the maximum MMR a group of players can lose in a match.
         '''
-        expected_performance = ScrimMMR.calculate_expected_performance_against_group(group, match)
-        return constant * (0 - expected_performance)
+        self_found = False
+        expected_performance = 0
+        for opposing_group in match:
+            if group == opposing_group:
+                self_found = True
+                continue
+            expected_performance += ScrimMMR.calculate_expected_performance_against_group(group, opposing_group)
+        expected_performance /= len(match) - 1 if self_found else len(match)
+        return int(constant * (0 - expected_performance))

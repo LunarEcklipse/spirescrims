@@ -1,16 +1,9 @@
 import argparse
 from enum import StrEnum
 
-class ScrimLogLevel:
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
-
 class ScrimArgs:
     _args: argparse.Namespace = None
-    log_level: ScrimLogLevel = None
+    log_level: str = None
     disable_reader: bool = None
     num_reader_threads: int = None
     reader_cpu_only: bool = None
@@ -26,7 +19,7 @@ class ScrimArgs:
     
     def __init__(self):
         self._args = self.parse_args()
-        self.log_level = ScrimLogLevel(self._args.log_level)
+        self.log_level = self._args.log_level
         self.disable_reader = self._args.disable_reader
         self.num_reader_threads = self._args.num_reader_threads
         self.reader_cpu_only = self._args.reader_cpu_only
