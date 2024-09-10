@@ -10,5 +10,5 @@ class ScrimMatchGroups:
         self.format = format
         self.lobby_sizes = lobby_sizes
         if type(self.lobby_sizes) == list:
-            self.lobby_sizes = self.lobby_sizes.sort(reverse=True)
+            self.lobby_sizes.sort(reverse=True)
         self.waitlist_playercount = waitlist_playercount

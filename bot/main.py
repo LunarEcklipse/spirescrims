@@ -31,11 +31,11 @@ scrims_version: str = "1.0.4"
 for i in range(32):
     if i == 14:
         pass
-    out = ScrimMatchmaking.calculate_lobby_sizes(i, ScrimFormat.SOLO)
+    out = ScrimMatchmaking.calculate_lobby_sizes(i, ScrimFormat.TRIO)
     if isinstance(out, ScrimMatchGroups):
-        print(f"Number of Players: {str(i)} - Lobbies: {out.lobby_sizes} - Waitlist: {out.waitlist_playercount}")
+        print(f"Number of Trios: {str(i)} - Lobbies: {out.lobby_sizes} - Waitlist: {out.waitlist_playercount}")
     else:
-        print(f"Number of Players: {str(i)} - Not Enough Players")
+        print(f"Number of Trios: {str(i)} - Not Enough Trios")
 
 x = input()
 

@@ -44,7 +44,7 @@ class ScrimMatchmaking:
         return lobbies
 
     @staticmethod
-    def calculate_lobby_sizes(num_groups: int, format: ScrimFormat, min_per_lobby: int = 0, max_per_lobby: int = 0) -> Optional[ScrimMatchGroups]:
+    def calculate_lobby_sizes(num_groups: int, format: ScrimFormat, max_lobbies: int = None, min_per_lobby: int = 0, max_per_lobby: int = 0) -> Optional[ScrimMatchGroups]:
         if min_per_lobby < max_per_lobby:
             return ValueError("Minimum per lobby cannot be greater than maximum per lobby.")
         min_groups_per_lobby, max_groups_per_lobby = None, None
@@ -52,7 +52,7 @@ class ScrimMatchmaking:
             case ScrimFormat.SOLO:
                 min_groups_per_lobby, max_groups_per_lobby = 6, 8
             case ScrimFormat.DUO:
-                min_groups_per_lobby, max_groups_per_lobby = 4, 6
+                min_groups_per_lobby, max_groups_per_lobby = 4, 5
             case ScrimFormat.TRIO:
                 min_groups_per_lobby, max_groups_per_lobby = 3, 4
             case ScrimFormat.CUSTOM:
@@ -69,16 +69,20 @@ class ScrimMatchmaking:
             while num_groups >= max_groups_per_lobby:
                 lobbies.append(max_groups_per_lobby)
                 num_groups -= max_groups_per_lobby
+                if max_lobbies is not None and len(lobbies) >= max_lobbies:
+                    return ScrimMatchGroups(format, ScrimMatchmaking.average_lobbies(lobbies, min_groups_per_lobby, max_groups_per_lobby), num_groups)
             # Determine how many players are left. If there are 6 or more, create a new lobby.
             if num_groups >= min_groups_per_lobby:
                 lobbies.append(num_groups)
                 num_groups = 0
+                if max_lobbies is not None and len(lobbies) >= max_lobbies:
+                    return ScrimMatchGroups(format, ScrimMatchmaking.average_lobbies(lobbies, min_groups_per_lobby, max_groups_per_lobby), num_groups)
             if num_groups == 0:
                 return ScrimMatchGroups(format, ScrimMatchmaking.average_lobbies(lobbies, min_groups_per_lobby, max_groups_per_lobby), 0)
             # Check if we can pull players from other lobbies to create new lobbies to maximize the players playing.
             # First, if the minimum and maximum number of players per lobby is the same we can't do anything, so just return with what we have and waitlist everyone
             if min_groups_per_lobby == max_groups_per_lobby:
-                return ScrimMatchGroups(format, lobbies, num_groups)
+                return ScrimMatchGroups(format, lobbies, num_groups) # We don't need to average lobbies as they're guaranteed the same size
             potential_extra_groups = 0
             # Calculate how many players can be pulled from lobbies to form new ones if necessary.
             for lobby in lobbies:
