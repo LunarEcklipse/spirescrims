@@ -78,6 +78,13 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS teams_master (team_id TEXT PRIMARY KEY NOT NULL, team_name TEXT NOT NULL, team_guild INTEGER NOT NULL);")
     cur.execute("CREATE TABLE IF NOT EXISTS team_members (team_id TEXT NOT NULL, user_id TEXT NOT NULL, is_owner INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams_master(team_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS player_stats (user_id TEXT PRIMARY KEY NOT NULL, mmr INTEGER NOT NULL, priority INTEGER NOT NULL, FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS scrim_checkin_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS scrim_dropout_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS scrims (scrim_id TEXT PRIMARY KEY NOT NULL, format INTEGER NOT NULL, is_active INTEGER NOT NULL);")
+    cur.execute("CREATE TABLE IF NOT EXISTS scrim_run_times (scrim_id TEXT NOT NULL, checkin_start_time TEXT NOT NULL, checkin_end_time TEXT NOT NULL, scrim_start_time TEXT NOT NULL, scrim_end_time TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS solo_scrim_checkin (scrim_id TEXT NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS team_scrim_checkin (scrim_id TEXT NOT NULL, team_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(team_id) REFERENCES teams_master(team_id));")
+
 init_scrim_db()
 
 ### USERS ###
@@ -261,7 +268,78 @@ class ScrimTeams:
                 cur.execute("INSERT INTO team_members (team_id, user_id, is_owner) VALUES (?, ?, ?);", (team_id, member.internal_user_id, BoolConvert.convert_bool_to_int()))
         return team_id
     
+class ScrimCheckin:
+    @staticmethod
+    @database_transaction
+    def get_check_in_channels(cur, guild_ids: Union[List[discord.Guild], discord.Guild, List[int], int, None] = None) -> List[int]:
+        '''Gets the scrim check-in channels. If a guild is supplied, searches for that particular guild.'''
+        out = []
+        if guild_ids is None:
+            cur.execute("SELECT * FROM scrim_checkin_channels;")
+            out.append([result[1] for result in cur.fetchall()])
+        elif isinstance(guild_ids, discord.Guild):
+            guild_ids = guild_ids.id
+            cur.execute("SELECT * FROM scrim_checkin_channels WHERE guild_id = ?;", (guild_ids,))
+            result = cur.fetchall()
+            if result is not None:
+                out.append([result[1] for result in result])
+        elif type(guild_ids) == list:
+            for guild_id in guild_ids:
+                if isinstance(guild_id, discord.Guild):
+                    guild_id = guild_id.id
+                cur.execute("SELECT * FROM scrim_checkin_channels WHERE guild_id = ?;", (guild_id,))
+                result = cur.fetchall()
+                if result is not None:
+                    out.append([result[1] for result in result])
+        elif type(guild_ids) == int:
+            cur.execute("SELECT * FROM scrim_checkin_channels WHERE guild_id = ?;", (guild_ids,))
+            result = cur.fetchall()
+            if result is not None:
+                out.append([result[1] for result in result])
+        else:
+            for guild_id in guild_ids:
+                cur.execute("SELECT * FROM scrim_checkin_channels WHERE guild_id = ?;", (guild_id,))
+                result = cur.fetchall()
+                if result is not None:
+                    out.append([result[1] for result in result])
+        return out
     
+    @staticmethod
+    @database_transaction
+    def get_dropout_channels(cur, guild_ids: Union[List[discord.Guild], discord.Guild, List[int], int, None] = None) -> List[int]:
+        '''Gets the scrim dropout channels. If a guild is supplied, searches for that particular guild.'''
+        out = []
+        if guild_ids is None:
+            cur.execute("SELECT * FROM scrim_dropout_channels;")
+            out.append([result[1] for result in cur.fetchall()])
+        elif isinstance(guild_ids, discord.Guild):
+            guild_ids = guild_ids.id
+            cur.execute("SELECT * FROM scrim_dropout_channels WHERE guild_id = ?;", (guild_ids,))
+            result = cur.fetchall()
+            if result is not None:
+                out.append([result[1] for result in result])
+        elif type(guild_ids) == list:
+            for guild_id in guild_ids:
+                if isinstance(guild_id, discord.Guild):
+                    guild_id = guild_id.id
+                cur.execute("SELECT * FROM scrim_dropout_channels WHERE guild_id = ?;", (guild_id,))
+                result = cur.fetchall()
+                if result is not None:
+                    out.append([result[1] for result in result])
+        elif type(guild_ids) == int:
+            cur.execute("SELECT * FROM scrim_dropout_channels WHERE guild_id = ?;", (guild_ids,))
+            result = cur.fetchall()
+            if result is not None:
+                out.append([result[1] for result in result])
+        else:
+            for guild_id in guild_ids:
+                cur.execute("SELECT * FROM scrim_dropout_channels WHERE guild_id = ?;", (guild_id,))
+                result = cur.fetchall()
+                if result is not None:
+                    out.append([result[1] for result in result])
+        return out
+    
+    # TODO: Scrim data storage here
 
 ### DECEIVE API ###
 
