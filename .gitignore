@@ -1,10 +1,13 @@
 .env
 /bot/lib/DI_API_Obj/__pycache__/*.pyc
+/bot/lib/obj/__pycache__
 /bot/lib/obj/__pycache__/*.pyc
+/bot/lib/__pycache__
 /bot/lib/__pycache__/*.pyc
 /bot/__pycache__/*.pyc
 bot/rsc/spire_scrims.db
 /venv/*
+.vscode
 .vscode/*
 .vscode/settings.json
 /bot/logs/*.log
