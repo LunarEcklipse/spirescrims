@@ -85,7 +85,7 @@ init_scrim_db()
 class ScrimUserData:
     @staticmethod
     @database_transaction
-    def insert_user_from_discord(cur, discord_user: Union[discord.Member, discord.User, int]) -> None:
+    def insert_user_from_discord(cur, discord_user: Union[discord.Member, discord.User, int], mmr: int = 1000, priority: int = 0) -> None:
         '''Inserts a user into the database from a Discord object if they do not exist.'''
         username: str = None
         if isinstance(discord_user, discord.Member) or isinstance(discord_user, discord.User):
@@ -96,7 +96,9 @@ class ScrimUserData:
         if result is not None:
             return
         scrim_logger.debug(f"Inserting user with Discord ID: \"{discord_user}\" into the database.")
-        cur.execute("INSERT INTO scrim_users (internal_user_id, username, discord_id) VALUES (?, ?, ?);", (UUIDGenerator.generate_uuid(), username, discord_user))
+        player_id = UUIDGenerator.generate_uuid()
+        cur.execute("INSERT INTO scrim_users (internal_user_id, username, discord_id) VALUES (?, ?, ?);", (player_id, username, discord_user))
+        cur.execute("INSERT INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (player_id, mmr, priority))
     
     @staticmethod
     @database_transaction
@@ -108,7 +110,12 @@ class ScrimUserData:
         result = cur.fetchone()
         if result is None:
             return None
-        return ScrimUser(result[0], result[1], result[2], result[3], result[4])
+        cur.execute("SELECT * FROM player_stats WHERE user_id = ?;", (result[0],)).fetchone()
+        result_stats = cur.fetchone()
+        if result_stats is None:
+            cur.execute("INSERT INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
+            result_stats = (result[0], 1000, 0)
+        return ScrimUser(result[0], result[1], result[2], result[3], result[4], result_stats[1], result_stats[2])
     
     @staticmethod
     @database_transaction
@@ -118,6 +125,11 @@ class ScrimUserData:
         result = cur.fetchone()
         if result is None:
             return None
+        cur.execute("SELECT * FROM player_stats WHERE user_id = ?;", (result[0],)).fetchone()
+        result_stats = cur.fetchone()
+        if result_stats is None:
+            cur.execute("INSERT INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
+            result_stats = (result[0], 1000, 0)
         return ScrimUser(result[0], result[1], result[2], result[3], result[4])
     
     @staticmethod
@@ -128,6 +140,11 @@ class ScrimUserData:
         result = cur.fetchone()
         if result is None:
             return None
+        cur.execute("SELECT * FROM player_stats WHERE user_id = ?;", (result[0],)).fetchone()
+        result_stats = cur.fetchone()
+        if result_stats is None:
+            cur.execute("INSERT INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
+            result_stats = (result[0], 1000, 0)
         return ScrimUser(result[0], result[1], result[2], result[3], result[4])
     
     @staticmethod
@@ -138,6 +155,11 @@ class ScrimUserData:
         result = cur.fetchone()
         if result is None:
             return None
+        cur.execute("SELECT * FROM player_stats WHERE user_id = ?;", (result[0],)).fetchone()
+        result_stats = cur.fetchone()
+        if result_stats is None:
+            cur.execute("INSERT INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
+            result_stats = (result[0], 1000, 0)
         return ScrimUser(result[0], result[1], result[2], result[3], result[4])
     
     @staticmethod
@@ -173,6 +195,39 @@ class ScrimUserData:
         if isinstance(discord_user, discord.Member) or isinstance(discord_user, discord.User):
             discord_user = discord_user.id
         cur.execute("UPDATE scrim_users SET username = ? WHERE discord_id = ?;", (username, discord_user))
+
+    @staticmethod
+    @database_transaction
+    def update_mmr(cur, internal_id: str, new_mmr: int) -> None:
+        '''Updates a user's MMR.'''
+        cur.execute("UPDATE player_stats SET mmr = ? where user_id = ?;", (new_mmr, internal_id))
+
+    @staticmethod
+    @database_transaction
+    def update_priority(cur, internal_id: str, new_priority: int) -> None:
+        '''Updates a user's priority.'''
+        cur.execute("UPDATE player_stats SET priority = ? where user_id = ?;", (new_priority, internal_id))
+
+    @staticmethod
+    @database_transaction
+    def adjust_user_mmr(cur, internal_id: str, mmr_adjustment: int) -> None:
+        '''Adjusts a user's MMR.'''
+        cur.execute("SELECT mmr FROM player_stats WHERE user_id = ?;", (internal_id,))
+        result = cur.fetchone()
+        if result is None:
+            return
+        cur.execute("UPDATE player_stats SET mmr = ? WHERE user_id = ?;", (result[0] + mmr_adjustment, internal_id))
+
+    @staticmethod
+    @database_transaction
+    def adjust_user_priority(cur, internal_id: str, priority_adjustment: int) -> None:
+        '''Adjusts a user's priority.'''
+        cur.execute("SELECT priority FROM player_stats WHERE user_id = ?;", (internal_id,))
+        result = cur.fetchone()
+        if result is None:
+            return
+        cur.execute("UPDATE player_stats SET priority = ? WHERE user_id = ?;", (result[0] + priority_adjustment, internal_id))
+    
 
 class ScrimTeams:
     @staticmethod

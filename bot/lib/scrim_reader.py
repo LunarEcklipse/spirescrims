@@ -9,6 +9,7 @@ from discord.ext import commands, tasks
 import lib.scrim_sysinfo as scrim_sysinfo
 from lib.scrim_logging import scrim_logger
 from lib.scrim_sqlite import ScrimUserData, DeceiveReaderActiveChannels
+from lib.scrim_args import ScrimArgs
 import lib.scrim_imageprocessing as scrim_imageprocessing
 
 channel_id_list: List[int] = [1224071523187425320, 1256544655072428113, 1224071542854516739, 1266861462085959800] # Add your channel IDs here
@@ -484,7 +485,7 @@ class ScrimReader(commands.Cog):
             p.terminate()
             p.join()
 
-    def spawn_processes(self, num_ocr_processes: int = 8):
+    def spawn_processes(self, num_ocr_processes: int = ScrimArgs().num_reader_threads):
         scrim_logger.debug(f"Attempting to spawn {str(num_ocr_processes)} OCR Reader Processes...")
         for i in range(num_ocr_processes):
             self.reader_processes.append(OCRReaderProcess(self.read_queue, self.results_queue, self.error_queue, f"OCRReaderProcess_{i}"))

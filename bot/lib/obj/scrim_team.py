@@ -15,3 +15,15 @@ class ScrimTeam:
         self.guild = guild
         self.team_owner = team_owner
         self.team_members = team_members
+
+    def calculate_group_mmr(self) -> int:
+        '''
+        Calculate the MMR of the team.
+        '''
+        for member in self.team_members:
+            if member.mmr is None: # If none, the member's MMR is assumed to be 1500.
+                member.mmr = 1500
+        return sum([member.mmr for member in self.team_members]) // len(self.team_members)
+    
+    
+
