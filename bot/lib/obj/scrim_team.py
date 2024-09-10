@@ -25,5 +25,8 @@ class ScrimTeam:
                 member.mmr = 1500
         return sum([member.mmr for member in self.team_members]) // len(self.team_members)
     
-    
+    def __eq__(self, other) -> bool:
+        if isinstance(other, ScrimTeam):
+            return self.team_id == other.team_id
+        return False
 

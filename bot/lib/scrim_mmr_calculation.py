@@ -28,9 +28,13 @@ class ScrimMMR:
         Calculate the expected performance of a group of players against a lobby of players.
         '''
         average_opponent_mmr = 0
+        found_self = False
         for opposing_group in opposing_groups:
+            if group == opposing_group: # Skip if the teams are the same.
+                found_self = True
+                continue
             average_opponent_mmr += opposing_group.calculate_group_mmr() if type(opposing_group) == ScrimTeam else opposing_group.mmr
-        average_opponent_mmr //= len(opposing_groups)
+        average_opponent_mmr //= len(opposing_groups) - 1 if found_self else len(opposing_groups) 
         group = group.calculate_group_mmr() if type(group) == ScrimTeam else group.mmr
         return 1 / (1 + 10 ** ((average_opponent_mmr - group) / 400))
     
@@ -39,7 +43,6 @@ class ScrimMMR:
         '''
         Calculate the mmr change of a group of players against another group of players based on how they placed.
         '''
-        
         expected_performance = ScrimMMR.calculate_expected_performance_against_group(group, match)
         actual_performance = group_score / winner_score
         return constant * (actual_performance - expected_performance)
