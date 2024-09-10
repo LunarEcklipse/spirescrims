@@ -88,6 +88,7 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_active_checkins (scrim_id TEXT NOT NULL, checkin_end_time TEXT NOT NULL), FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS solo_scrim_checkin (scrim_id TEXT NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS team_scrim_checkin (scrim_id TEXT NOT NULL, team_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(team_id) REFERENCES teams_master(team_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS scrim_checkin_update_message_sent (scrim_id TEXT NOT NULL, checkin_start_sent INTEGER NOT NULL, checkin_end_sent INTEGER NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));")
 
 init_scrim_db()
 
@@ -271,12 +272,45 @@ class ScrimTeams:
                 cur.execute("INSERT INTO team_members (team_id, user_id, is_owner) VALUES (?, ?, ?);", (team_id, member.internal_user_id, BoolConvert.convert_bool_to_int()))
         return team_id
     
-class Scrims:
+class ScrimsData:
     @staticmethod
     @database_transaction
-    def get_active_scrims(cur) -> List[Scrim]:
+    def get_scrim_by_id(cur, scrim_id: str) -> Union[Scrim, None]:
+        '''Gets a scrim by ID.'''
+        cur.execute('''SELECT scrims.scrim_id, scrims.format, scrims.is_active, scrim_run_times.checkin_start_time, scrim_run_times.checkin_end_time, scrim_run_times.scrim_start_time
+            FROM scrims
+            LEFT JOIN scrim_run_times ON scrims.scrim_id = scrim_run_times.scrim_id
+            WHERE scrims.scrim_id = ?;''', (scrim_id,))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return Scrim(result[0],
+                     ScrimFormat(result[1]),
+                     result[2],
+                     DatetimeConvert.convert_str_to_datetime(result[3]) if result[3] is not None else None,
+                     DatetimeConvert.convert_str_to_datetime(result[4]) if result[4] is not None else None,
+                     DatetimeConvert.convert_str_to_datetime(result[5]) if result[5] is not None else None)
+
+    @staticmethod
+    @database_transaction
+    def get_active_scrims(cur) -> Union[List[Scrim], None]:
         '''Gets all active scrims.'''
-        pass # TODO: Implement this
+        cur.execute('''SELECT scrims.scrim_id, scrims.format, scrims.is_active, scrim_run_times.checkin_start_time, scrim_run_times.checkin_end_time, scrim_run_times.scrim_start_time
+            FROM scrims
+            LEFT JOIN scrim_run_times ON scrims.scrim_id = scrim_run_times.scrim_id
+            WHERE scrims.is_active = 1;''')
+        results = cur.fetchall()
+        if results is None:
+            return None
+        return [Scrim(result[0],
+                ScrimFormat(result[1]),
+                result[2],
+                DatetimeConvert.convert_str_to_datetime(result[3]) if result[3] is not None else None,
+                DatetimeConvert.convert_str_to_datetime(result[4]) if result[4] is not None else None,
+                DatetimeConvert.convert_str_to_datetime(result[5]) if result[5] is not None else None) for result in results]
+
+    
+        
 
 class ScrimCheckin:
     @staticmethod
