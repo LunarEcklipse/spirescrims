@@ -89,20 +89,22 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS scrims (scrim_id TEXT PRIMARY KEY NOT NULL, format INTEGER NOT NULL, is_active INTEGER NOT NULL);")
     cur.execute("DROP TABLE IF EXISTS scrim_run_times;")
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_run_times (scrim_id TEXT NOT NULL, checkin_start_time TEXT NOT NULL, checkin_end_time TEXT NOT NULL, scrim_start_time TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS scrim_active_checkins (scrim_id TEXT NOT NULL, checkin_end_time TEXT NOT NULL), FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
+    cur.execute("CREATE TABLE IF NOT EXISTS scrim_active_checkins (scrim_id TEXT NOT NULL, checkin_end_time TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS solo_scrim_checkin (scrim_id TEXT NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS team_scrim_checkin (scrim_id TEXT NOT NULL, team_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(team_id) REFERENCES teams_master(team_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_checkin_update_message_sent (scrim_id TEXT NOT NULL, checkin_start_sent INTEGER NOT NULL, checkin_end_sent INTEGER NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_debug_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
+    
     scrim_logger.debug("Database initialized.")
 init_scrim_db()
+
 
 ### USERS ###
 
 class ScrimUserData:
     @staticmethod
     @database_transaction
-    def insert_user_from_discord(cur, discord_user: Union[discord.Member, discord.User, int], mmr: int = 1000, priority: int = 0) -> None:
+    def insert_user_from_discord(cur: sqlean.Connection.cursor, discord_user: Union[discord.Member, discord.User, int], mmr: int = 1000, priority: int = 0) -> None:
         '''Inserts a user into the database from a Discord object if they do not exist.'''
         username: str = None
         if isinstance(discord_user, discord.Member) or isinstance(discord_user, discord.User):
@@ -119,7 +121,7 @@ class ScrimUserData:
     
     @staticmethod
     @database_transaction
-    def get_user_by_discord_id(cur, discord_user: Union[discord.Member, discord.User, int]) -> Union[ScrimUser, None]:
+    def get_user_by_discord_id(cur: sqlean.Connection.cursor, discord_user: Union[discord.Member, discord.User, int]) -> Union[ScrimUser, None]:
         '''Gets a user from the database by Discord ID.'''
         if isinstance(discord_user, discord.Member) or isinstance(discord_user, discord.User):
             discord_user = discord_user.id
@@ -136,7 +138,7 @@ class ScrimUserData:
     
     @staticmethod
     @database_transaction
-    def get_user_by_sweet_id(cur, sweet_id: str) -> Union[ScrimUser, None]:
+    def get_user_by_sweet_id(cur: sqlean.Connection.cursor, sweet_id: str) -> Union[ScrimUser, None]:
         '''Gets a user from the database by Sweet ID.'''
         cur.execute("SELECT * FROM scrim_users WHERE sweet_id = ?;", (sweet_id,))
         result = cur.fetchone()
@@ -386,6 +388,36 @@ class ScrimCheckin:
         return out
     
     # TODO: Scrim data storage here
+
+class ScrimDebugChannels:
+    @staticmethod
+    @database_transaction
+    def get_debug_channels(cur: sqlean.Connection.cursor, guild: Union[discord.Guild, int, None] = None) -> List[int]:
+        '''Gets debug channels within discord. If a guild is supplied, returns debug channels for that guild.'''
+        out = []
+        if guild is None:
+            cur.execute("SELECT * FROM scrim_debug_channels;")
+            out.append([result[1] for result in cur.fetchall()])
+            return out
+        elif isinstance(guild, discord.Guild):
+            guild = guild.id
+        return [result[1] for result in cur.execute("SELECT * FROM scrim_debug_channels WHERE guild_id = ?;", (guild,)).fetchall()]
+    
+    def add_debug_channel(cur: sqlean.Connection.cursor, guild: Union[discord.Guild, int], channel: Union[discord.TextChannel, discord.VoiceChannel, discord.StageChannel, discord.Thread, int]) -> None:
+        '''Adds a debug channel to the database.'''
+        if isinstance(guild, discord.Guild):
+            guild = guild.id
+        if isinstance(channel, discord.TextChannel) or isinstance(channel, discord.VoiceChannel) or isinstance(channel, discord.StageChannel) or isinstance(channel, discord.Thread):
+            channel = channel.id
+        cur.execute("INSERT INTO scrim_debug_channels (guild_id, channel_id) VALUES (?, ?);", (guild, channel))
+
+    def remove_debug_channel(cur: sqlean.Connection.cursor, guild: Union[discord.Guild, int], channel: Union[discord.TextChannel, discord.VoiceChannel, discord.StageChannel, discord.Thread, int]) -> None:
+        '''Removes a debug channel from the database.'''
+        if isinstance(guild, discord.Guild):
+            guild = guild.id
+        if isinstance(channel, discord.TextChannel) or isinstance(channel, discord.VoiceChannel) or isinstance(channel, discord.StageChannel) or isinstance(channel, discord.Thread):
+            channel = channel.id
+        cur.execute("DELETE FROM scrim_debug_channels WHERE guild_id = ? AND channel_id = ?;", (guild, channel))
 
 ### DECEIVE API ###
 

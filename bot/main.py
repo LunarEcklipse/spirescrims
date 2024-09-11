@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, random
 from typing import Optional
 from dotenv import load_dotenv, find_dotenv
 from discord.ext import commands
@@ -35,13 +35,6 @@ intents = discord.Intents.all()
 
 bot = discord.Bot(intents=intents)
 args = ScrimArgs()
-
-user_list = [ScrimUser("a", "user1", None, None, None, 1000, 0), ScrimUser("b", "user2", None, None, None, 592, 0), ScrimUser("c", "user3", None, None, None, 2000, 0), ScrimUser("d", "user4", None, None, None, 250, 0)]
-user_test = ScrimUser("test", "test", None, None, None, 1000, 0)
-print(f"Estimated MMR vs someone of equal skill: {ScrimMMR.calculate_expected_performance_against_group(user_test, user_list[0])}")
-print(f"Estimated MMR against lobby of varying skill: {ScrimMMR.calculate_expected_performance_against_lobby(user_test, user_list)}")
-print(f"MMR Max Gain/Loss: {ScrimMMR.calculate_maximum_mmr_loss(user_test, user_list)} - {ScrimMMR.calculate_maximum_mmr_gain(user_test, user_list)}")
-             
 
 scrim_logger.info(f"Starting Scrim Helper v{scrims_version}")
 # Initialize the ScrimReader cog
