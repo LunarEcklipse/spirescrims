@@ -394,15 +394,24 @@ class ScrimDebugChannels:
     @database_transaction
     def get_debug_channels(cur: sqlean.Connection.cursor, guild: Union[discord.Guild, int, None] = None) -> List[int]:
         '''Gets debug channels within discord. If a guild is supplied, returns debug channels for that guild.'''
-        out = []
         if guild is None:
             cur.execute("SELECT * FROM scrim_debug_channels;")
-            out.append([result[1] for result in cur.fetchall()])
+            out = [result[1] for result in cur.fetchall()]
             return out
         elif isinstance(guild, discord.Guild):
             guild = guild.id
         return [result[1] for result in cur.execute("SELECT * FROM scrim_debug_channels WHERE guild_id = ?;", (guild,)).fetchall()]
     
+    @staticmethod
+    @database_transaction
+    def is_channel_debug(cur: sqlean.Connection.cursor, channel: Union[discord.TextChannel, discord.VoiceChannel, discord.StageChannel, discord.Thread, int]) -> bool:
+        '''Determines if a channel is a debug channel.'''
+        if isinstance(channel, discord.TextChannel) or isinstance(channel, discord.VoiceChannel) or isinstance(channel, discord.StageChannel) or isinstance(channel, discord.Thread):
+            channel = channel.id
+        return cur.execute("SELECT * FROM scrim_debug_channels WHERE channel_id = ?;", (channel,)).fetchone() is not None
+
+    @staticmethod
+    @database_transaction
     def add_debug_channel(cur: sqlean.Connection.cursor, guild: Union[discord.Guild, int], channel: Union[discord.TextChannel, discord.VoiceChannel, discord.StageChannel, discord.Thread, int]) -> None:
         '''Adds a debug channel to the database.'''
         if isinstance(guild, discord.Guild):
@@ -411,6 +420,8 @@ class ScrimDebugChannels:
             channel = channel.id
         cur.execute("INSERT INTO scrim_debug_channels (guild_id, channel_id) VALUES (?, ?);", (guild, channel))
 
+    @staticmethod
+    @database_transaction
     def remove_debug_channel(cur: sqlean.Connection.cursor, guild: Union[discord.Guild, int], channel: Union[discord.TextChannel, discord.VoiceChannel, discord.StageChannel, discord.Thread, int]) -> None:
         '''Removes a debug channel from the database.'''
         if isinstance(guild, discord.Guild):

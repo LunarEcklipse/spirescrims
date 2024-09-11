@@ -28,12 +28,13 @@ from lib.scrim_matchmaking import ScrimMatchmaking
 from lib.scrim_args import ScrimArgs
 from lib.obj.scrim_user import ScrimUser
 from lib.scrim_mmr_calculation import ScrimMMR
+from lib.scrim_debugcommands import ScrimDebugCommands
 
 scrims_version: str = "1.0.6"
 
 intents = discord.Intents.all()
 
-bot = discord.Bot(intents=intents)
+bot = commands.Bot(command_prefix="$", intents=intents)
 args = ScrimArgs()
 
 scrim_logger.info(f"Starting Scrim Helper v{scrims_version}")
@@ -51,13 +52,13 @@ scrim_logger.info("Initializing User Update Listeners...")
 bot.add_cog(ScrimUserUpdateListener(bot))
 scrim_logger.info("Initializing Team Management Cog...")
 bot.add_cog(ScrimTeamManager(bot))
+scrim_logger.info("Initializing Scrim Debug Commands...")
+bot.add_cog(ScrimDebugCommands(bot))
 
 @bot.event
 async def on_ready():
     scrim_logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})') #type: ignore
-
     api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET")) #type: ignore
-    sw = await api.get_user("1jii7052-k048-6392-1kk4-784il9l47khj")
     # im = ScrimPlots.calculate_agent_pickrates_over_seasons(sw)
     # im.save("test.png")
 
