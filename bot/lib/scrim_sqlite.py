@@ -8,6 +8,7 @@ from lib.scrim_logging import scrim_logger
 from lib.obj.scrim_user import ScrimUser
 from lib.obj.scrim import Scrim
 from lib.obj.scrim_format import ScrimFormat
+from lib.scrim_logging import scrim_logger
 
 sqlean.extensions.enable_all()
 
@@ -29,6 +30,7 @@ class BoolConvert:
     @staticmethod
     def convert_int_to_bool(value: int) -> bool:
         if value not in [0, 1]:
+            scrim_logger.error("ValueError in BoolConvert.convert_int_to_bool: Value must be either 0 or 1.")
             raise ValueError("Value must be either 0 or 1.")
         return False if value == 0 else True
     
@@ -58,6 +60,7 @@ def database_transaction(func): # This is a decorator that wraps a function in a
     def wrapper(*args, **kwargs):
         with db_lock:
             with closing(connect_to_db()) as conn:
+                scrim_logger.debug("Connected to database.")
                 with closing(conn.cursor()) as cur:
                     try:
                         result = func(cur, *args, **kwargs)
@@ -65,6 +68,7 @@ def database_transaction(func): # This is a decorator that wraps a function in a
                         return result
                     except Exception as e:
                         conn.rollback()
+                        scrim_logger.error(f"Database transaction failed with the following error: {e}")
                         raise e
     return wrapper
 
@@ -76,7 +80,7 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS ocr_reader_channels (guild_id INTEGER, channel_id INTEGER, PRIMARY KEY(guild_id, channel_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_partial_cache (sweet_id TEXT PRIMARY KEY NOT NULL, display_name TEXT, last_updated TEXT);")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_cache (sweet_id TEXT PRIMARY KEY NOT NULL, json_data TEXT, last_updated TEXT, FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_discord_links (discord_id INTEGER NOT NULL, sweet_id TEXT NOT NULL, PRIMARY KEY (discord_id, sweet_id), FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
+    cur.execute("DROP TABLE IF EXISTS sweet_user_discord_links;")
     cur.execute("CREATE TABLE IF NOT EXISTS teams_master (team_id TEXT PRIMARY KEY NOT NULL, team_name TEXT NOT NULL, team_guild INTEGER NOT NULL);")
     cur.execute("CREATE TABLE IF NOT EXISTS team_members (team_id TEXT NOT NULL, user_id TEXT NOT NULL, is_owner INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams_master(team_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS player_stats (user_id TEXT PRIMARY KEY NOT NULL, mmr INTEGER NOT NULL, priority INTEGER NOT NULL, FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
@@ -89,7 +93,8 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS solo_scrim_checkin (scrim_id TEXT NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS team_scrim_checkin (scrim_id TEXT NOT NULL, team_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(team_id) REFERENCES teams_master(team_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_checkin_update_message_sent (scrim_id TEXT NOT NULL, checkin_start_sent INTEGER NOT NULL, checkin_end_sent INTEGER NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));")
-
+    cur.execute("CREATE TABLE IF NOT EXISTS scrim_debug_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
+    scrim_logger.debug("Database initialized.")
 init_scrim_db()
 
 ### USERS ###
@@ -309,9 +314,6 @@ class ScrimsData:
                 DatetimeConvert.convert_str_to_datetime(result[4]) if result[4] is not None else None,
                 DatetimeConvert.convert_str_to_datetime(result[5]) if result[5] is not None else None) for result in results]
 
-    
-        
-
 class ScrimCheckin:
     @staticmethod
     @database_transaction
@@ -492,45 +494,6 @@ class SweetUserCache:
         if last_updated is None:
             return True
         return last_updated + timedelta(seconds=sweet_user_cache_expiration_seconds) <= datetime.now(timezone.utc)
-
-class DiscordAccountLinks:
-    @staticmethod
-    @database_transaction
-    def get_sweet_id_from_discord_id(cur, discord_id: Union[discord.Member, discord.User, int]) -> Union[str, None]:
-        '''Gets the Sweet ID linked to a Discord ID.'''
-        if isinstance(discord_id, discord.Member) or isinstance(discord_id, discord.User):
-            discord_id = discord_id.id
-        cur.execute("SELECT sweet_id FROM sweet_user_discord_links WHERE discord_id = ?;", (discord_id,))
-        result = cur.fetchone()
-        if result is None:
-            return None
-        return result[0]
-    
-    @staticmethod
-    @database_transaction
-    def get_discord_id_from_sweet_id(cur, sweet_id: str) -> Union[int, None]:
-        '''Gets the Discord ID linked to a Sweet ID.'''
-        cur.execute("SELECT discord_id FROM sweet_user_discord_links WHERE sweet_id = ?;", (sweet_id,))
-        result = cur.fetchone()
-        if result is None:
-            return None
-        return result[0]
-
-    @staticmethod
-    @database_transaction
-    def link_discord_id_to_sweet_id(cur, discord_id: Union[discord.Member, discord.User, int], sweet_id: str) -> None:
-        '''Links a Discord ID to a Sweet ID.'''
-        if isinstance(discord_id, discord.Member) or isinstance(discord_id, discord.User):
-            discord_id = discord_id.id
-        cur.execute("INSERT INTO sweet_user_discord_links (discord_id, sweet_id) VALUES (?, ?);", (discord_id, sweet_id))
-
-    @staticmethod
-    @database_transaction
-    def unlink_discord_id(cur, discord_id: Union[discord.Member, discord.User, int]) -> None:
-        '''Unlinks a Discord ID from a Sweet ID.'''
-        if isinstance(discord_id, discord.Member) or isinstance(discord_id, discord.User):
-            discord_id = discord_id.id
-        cur.execute("DELETE FROM sweet_user_discord_links WHERE discord_id = ?;", (discord_id,))
 
 ### READER ###
 

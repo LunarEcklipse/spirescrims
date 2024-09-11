@@ -4,7 +4,6 @@ from discord.ext import commands, tasks
 from lib.scrim_sqlite import ScrimsData, ScrimCheckin
 from lib.obj.scrim import Scrim
 
-
 class ScrimCheckin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
