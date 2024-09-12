@@ -31,14 +31,14 @@ class ScrimDebugCommands(commands.Cog):
         # Delete the original message
         discord_user = await self.bot.fetch_user(discord_id)
         if discord_user is None:
-            await ctx.send(f"Could not find user with Discord ID: `{discord_id}`", reply=True)
+            await ctx.send(f"Could not find user with Discord ID: `{discord_id}`", reference=ctx.message)
             return
         user: ScrimUser = ScrimUserData.get_user_by_discord_id(discord_id)
         if user is None:
             ScrimUserData.insert_user_from_discord(discord_id)
             user = ScrimUserData.get_user_by_discord_id(discord_id)
         ScrimUserData.connect_sweet_to_id(user.scrim_id, sweet_id)
-        await ctx.send(f"Connected Sweet ID: `{sweet_id}` to Discord ID `{discord_id}`", reply=True)
+        await ctx.send(f"Connected Sweet ID: `{sweet_id}` to Discord ID `{discord_id}`", reference=ctx.message)
 
     # Who is
     @commands.command(name="whois")
@@ -48,7 +48,7 @@ class ScrimDebugCommands(commands.Cog):
             return
         user: ScrimUser = ScrimUserData.get_user_by_discord_id(discord_id)
         if user is None:
-            await ctx.send(f"Could not find user with Discord ID: `{discord_id}`", reply=True)
+            await ctx.send(f"Could not find user with Discord ID: `{discord_id}`", reference=ctx.message)
             return
         discord_user: Union[discord.User, discord.Member] = await self.bot.fetch_user(discord_id)
         # Construct the embed
