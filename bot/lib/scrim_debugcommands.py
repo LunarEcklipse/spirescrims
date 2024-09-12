@@ -3,6 +3,8 @@ from typing import Union
 from discord.ext import commands
 from lib.scrim_sqlite import ScrimDebugChannels, ScrimUserData
 from lib.obj.scrim_user import ScrimUser
+from lib.obj.scrim_format import ScrimFormat
+from lib.scrim_datetime import DiscordDatestring
 
 def is_owner(user: Union[discord.User, discord.Member, int]) -> bool:
     if isinstance(user, discord.User) or isinstance(user, discord.Member):
@@ -62,4 +64,11 @@ class ScrimDebugCommands(commands.Cog):
         emb.set_footer(text=f"Discord ID: {str(discord_user.id)}")
         await ctx.send(content=None, embed=emb, reference=ctx.message)
 
+    # Start one-time scrim
+    @commands.command(name="startscrim")
+    async def start_scrim(self, ctx: discord.ApplicationContext, format: str, time: str):
+        # If not in a debug channel, ignore
+        if ctx.channel.id not in self.debug_channels:
+            return
+        
     

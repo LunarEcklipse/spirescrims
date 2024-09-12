@@ -7,7 +7,13 @@ from lib.obj.scrim import Scrim
 class ScrimCheckin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.checkin_channels = ScrimCheckin.get_check_in_channels()
         self.checkin_loop.start()
+
+    async def get_guild_checkin_channels(self, guild: Union[discord.Guild, int]) -> List[discord.TextChannel]:
+        guild_id = guild.id if isinstance(guild, discord.Guild) else guild
+        checkin_channels = ScrimsData.get_checkin_channels(guild_id)
+        return [self.bot.get_channel(channel_id) for channel_id in checkin_channels]
 
     @tasks.loop(seconds=60)
     async def checkin_loop(self):

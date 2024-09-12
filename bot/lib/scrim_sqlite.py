@@ -29,6 +29,13 @@ class UUIDGenerator:
 class BoolConvert:
     @staticmethod
     def convert_int_to_bool(value: int) -> bool:
+        '''Converts an integer to a boolean for retrieving boolean values from SQLite storage.
+        ### Parameters
+        * `value` - The integer value to convert. Must be either 0 or 1.
+        ### Returns
+        * `bool` - The boolean value.
+        ### Raises
+        * `ValueError` - If the value is not 0 or 1.'''
         if value not in [0, 1]:
             scrim_logger.error("ValueError in BoolConvert.convert_int_to_bool: Value must be either 0 or 1.")
             raise ValueError("Value must be either 0 or 1.")
@@ -36,6 +43,11 @@ class BoolConvert:
     
     @staticmethod
     def convert_bool_to_int(value: bool) -> int:
+        '''Converts a boolean to an integer for storing boolean values in SQLite.
+        ### Parameters
+        * `value` - The boolean value to convert.
+        ### Returns
+        * `int` - The integer value. 1 for True, 0 for False'''
         return 1 if value else 0
 
 if __name__ == "__main__":
@@ -43,17 +55,40 @@ if __name__ == "__main__":
     # sys.exit()
 
 def connect_to_db() -> sqlean.Connection:
-    '''Connects to the database.'''
+    '''Connects to the database. This should be used from within the @database_transaction decorator.
+    ### Returns
+    * `sqlean.Connection` - The connection object.'''
     return sqlean.connect(sqlite_db_path)
 
 class DatetimeConvert:
     @staticmethod
     def convert_datetime_to_str(value: datetime) -> str:
+        '''Converts a datetime object to a string for storage in SQLite.
+        ### Parameters
+        * `value` - The datetime object to convert.
+        ### Returns
+        * `str` - The string representation of the datetime object.
+        ### Raises
+        * `TypeError` - If the value is not a datetime object.'''
+        if not isinstance(value, datetime):
+            scrim_logger.error("TypeError in DatetimeConvert.convert_datetime_to_str: Value must be a datetime object.")
+            raise TypeError("Value must be a datetime object.")
         return value.astimezone(pytz.utc).isoformat()
     
     @staticmethod
     def convert_str_to_datetime(value: str) -> datetime:
-        return datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
+        '''Converts a string to a datetime object for retrieval from SQLite.
+        ### Parameters
+        * `value` - The string to convert.
+        ### Returns
+        * `datetime` - The datetime object.
+        ### Raises
+        * `ValueError` - If the string is not a valid datetime string.'''
+        try:
+            return datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
+        except ValueError:
+            scrim_logger.error("ValueError in DatetimeConvert.convert_str_to_datetime: Value must be a valid datetime string.")
+            raise ValueError("Value must be a valid datetime string.")
 
 # Decorator wrapper
 def database_transaction(func): # This is a decorator that wraps a function in a database transaction.
@@ -80,14 +115,13 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     cur.execute("CREATE TABLE IF NOT EXISTS ocr_reader_channels (guild_id INTEGER, channel_id INTEGER, PRIMARY KEY(guild_id, channel_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_partial_cache (sweet_id TEXT PRIMARY KEY NOT NULL, display_name TEXT, last_updated TEXT);")
     cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_cache (sweet_id TEXT PRIMARY KEY NOT NULL, json_data TEXT, last_updated TEXT, FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
-    cur.execute("DROP TABLE IF EXISTS sweet_user_discord_links;")
     cur.execute("CREATE TABLE IF NOT EXISTS teams_master (team_id TEXT PRIMARY KEY NOT NULL, team_name TEXT NOT NULL, team_guild INTEGER NOT NULL);")
     cur.execute("CREATE TABLE IF NOT EXISTS team_members (team_id TEXT NOT NULL, user_id TEXT NOT NULL, is_owner INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams_master(team_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS player_stats (user_id TEXT PRIMARY KEY NOT NULL, mmr INTEGER NOT NULL, priority INTEGER NOT NULL, FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_checkin_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_dropout_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS scrims (scrim_id TEXT PRIMARY KEY NOT NULL, format INTEGER NOT NULL, is_active INTEGER NOT NULL);")
-    cur.execute("DROP TABLE IF EXISTS scrim_run_times;")
+    cur.execute("DROP TABLE IF EXISTS scrims;")
+    cur.execute("CREATE TABLE IF NOT EXISTS scrims (scrim_id TEXT PRIMARY KEY NOT NULL, scrim_guild_id INTEGER NOT NULL, format INTEGER NOT NULL, is_active INTEGER NOT NULL);")
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_run_times (scrim_id TEXT NOT NULL, checkin_start_time TEXT NOT NULL, checkin_end_time TEXT NOT NULL, scrim_start_time TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_active_checkins (scrim_id TEXT NOT NULL, checkin_end_time TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
     cur.execute("CREATE TABLE IF NOT EXISTS solo_scrim_checkin (scrim_id TEXT NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
@@ -165,7 +199,7 @@ class ScrimUserData:
             cur.execute("INSERT OR IGNORE INTO player_stats (user_id, mmr, priority) VALUES (?, ?, ?);", (result[0], 1000, 0))
             result_stats = (result[0], 1000, 0)
         return ScrimUser(result[0], result[1], result[2], result[3], result[4])
-    
+
     @staticmethod
     @database_transaction
     def get_user_by_id(cur, internal_id: str) -> Union[ScrimUser, None]:
@@ -203,9 +237,20 @@ class ScrimUserData:
 
     @staticmethod
     @database_transaction
-    def update_username(cur, internal_id: str, username: str) -> None:
-        '''Updates a user's username.'''
-        cur.execute("UPDATE scrim_users SET username = ? WHERE internal_user_id = ?;", (username, internal_id))
+    def update_user(cur, user: ScrimUser) -> None:
+        '''Updates a user in the database.'''
+        cur.execute("UPDATE scrim_users SET username = ?, discord_id = ?, sweet_id = ?, twitch_id = ? WHERE internal_user_id = ?;", (user.username, user.discord_id, user.sweet_id, user.twitch_id, user.internal_user_id))
+
+    @staticmethod
+    @database_transaction
+    def update_username(cur, user: Union[ScrimUser, str], username: str) -> None:
+        '''Updates a user's username.
+        ### Parameters
+        * `user` - The user to update. Can be either a `ScrimUser` object or an internal ID.
+        * `username` - The new username.'''
+        if isinstance(user, ScrimUser):
+            user = user.internal_user_id
+        cur.execute("UPDATE scrim_users SET username = ? WHERE internal_user_id = ?;", (username, user))
     
     @staticmethod
     @database_transaction
@@ -246,6 +291,13 @@ class ScrimUserData:
         if result is None:
             return
         cur.execute("UPDATE player_stats SET priority = ? WHERE user_id = ?;", (result[0] + priority_adjustment, internal_id))
+
+    @staticmethod
+    @database_transaction
+    def delete_user(cur, internal_id: str) -> None:
+        '''Deletes a user from the database.'''
+        cur.execute("DELETE FROM scrim_users WHERE internal_user_id = ?;", (internal_id,))
+        cur.execute("DELETE FROM player_stats WHERE user_id = ?;", (internal_id,))
 
 class ScrimTeams:
     @staticmethod
@@ -302,7 +354,7 @@ class ScrimsData:
     @database_transaction
     def get_active_scrims(cur) -> Union[List[Scrim], None]:
         '''Gets all active scrims.'''
-        cur.execute('''SELECT scrims.scrim_id, scrims.format, scrims.is_active, scrim_run_times.checkin_start_time, scrim_run_times.checkin_end_time, scrim_run_times.scrim_start_time
+        cur.execute('''SELECT scrims.scrim_id, scrims.scrim_guild_id, scrims.format, scrims.is_active, scrim_run_times.checkin_start_time, scrim_run_times.checkin_end_time, scrim_run_times.scrim_start_time
             FROM scrims
             LEFT JOIN scrim_run_times ON scrims.scrim_id = scrim_run_times.scrim_id
             WHERE scrims.is_active = 1;''')
@@ -310,11 +362,27 @@ class ScrimsData:
         if results is None:
             return None
         return [Scrim(result[0],
-                ScrimFormat(result[1]),
-                result[2],
-                DatetimeConvert.convert_str_to_datetime(result[3]) if result[3] is not None else None,
+                      result[1],
+                      ScrimFormat(result[2]),
+                result[3],
                 DatetimeConvert.convert_str_to_datetime(result[4]) if result[4] is not None else None,
-                DatetimeConvert.convert_str_to_datetime(result[5]) if result[5] is not None else None) for result in results]
+                DatetimeConvert.convert_str_to_datetime(result[5]) if result[5] is not None else None,
+                DatetimeConvert.convert_str_to_datetime(result[6]) if result[6] is not None else None) for result in results]
+
+    @staticmethod
+    @database_transaction
+    def start_scrim(cur, scrim: Scrim) -> None:
+        '''Starts a scrim.'''
+        cur.execute("INSERT INTO scrims (scrim_id, scrim_guild_id, format, is_active) VALUES (?, ?, ?, ?);", (scrim.scrim_id, scrim.scrim_guild, scrim.scrim_format.value, BoolConvert.convert_bool_to_int(scrim.is_active)))
+        cur.execute("INSERT INTO scrim_run_times (scrim_id, checkin_start_time, checkin_end_time, scrim_start_time) VALUES (?, ?, ?, ?);", (scrim.scrim_id, DatetimeConvert.convert_datetime_to_str(scrim.scrim_checkin_start_time), DatetimeConvert.convert_datetime_to_str(scrim.scrim_checkin_end_time), DatetimeConvert.convert_datetime_to_str(scrim.scrim_start_time)))
+
+    @staticmethod
+    @database_transaction
+    def end_scrim(cur, scrim: Union[Scrim, str]) -> None:
+        '''Ends a scrim.'''
+        if isinstance(scrim, Scrim):
+            scrim = scrim.scrim_id
+        cur.execute("UPDATE scrims SET is_active = 0 WHERE scrim_id = ?;", (scrim,))
 
 class ScrimCheckin:
     @staticmethod
@@ -387,6 +455,12 @@ class ScrimCheckin:
                     out.append([result[1] for result in result])
         return out
     
+    @staticmethod
+    @database_transaction
+    def set_checkin_channel_message_sent(cur, scrim_id: str):
+        '''Sets the check-in message sent status to true.'''
+        cur.execute("UPDATE scrim_checkin_update_message_sent SET checkin_start_sent = 1 WHERE scrim_id = ?;", (scrim_id,))
+
     # TODO: Scrim data storage here
 
 class ScrimDebugChannels:

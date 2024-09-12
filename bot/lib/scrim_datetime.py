@@ -38,3 +38,12 @@ class DiscordDatestring:
     @staticmethod
     def get_discord_timestamp_relative(time: datetime = datetime.now(datetime.UTC)) -> str:
         return f"<t:{DiscordDatestring._get_epoch_unix_timestamp(time)}:R>"
+    
+    @staticmethod
+    def is_valid_discord_timestamp(string: str) -> bool:
+        return string.startswith("<t:") and string.endswith(">")
+
+    @staticmethod
+    def get_datetime_from_discord_timestamp(timestamp: str) -> datetime:
+        '''Returns a datetime object from a Discord timestamp string.'''
+        return datetime.fromtimestamp(int(timestamp.split(":")[1]), datetime.UTC)
