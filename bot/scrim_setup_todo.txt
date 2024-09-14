@@ -1,0 +1,9 @@
+The steps we need to set up a scrim
+
+1- SCRIM SETUP
+- The user calls a command to set up a scrim that either runs once, once a week, or once a month. They supply the format, as well as the time via a discord timestamp.
+- The scrim is saved in the database with a UUID ID.
+- An update loop checks once per minute for scrims that are about to begin. If it is within 24 hours of the scrim, the scrim becomes active and signups begin in that server's sign up channel.
+- While signups are active, the bot listens for signup requests in that channel. Signups are sorted first by priority, second by signup time.
+- Signups end one hour before the scrim starts. Once signups end, calculate how many lobbies are needed, and sort the players into those lobbies by MMR.
+- Scrims end two hours after the scrim start time. Delete them from the database unless they are scheduled, in which case delete all signed up players and update their next run timestamp.

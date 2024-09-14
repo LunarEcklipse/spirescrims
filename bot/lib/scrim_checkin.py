@@ -1,13 +1,13 @@
 import discord
 from typing import Union, List
 from discord.ext import commands, tasks
-from lib.scrim_sqlite import ScrimsData, ScrimCheckin
+from lib.scrim_sqlite import ScrimsData, ScrimCheckinData
 from lib.obj.scrim import Scrim
 
 class ScrimCheckin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.checkin_channels = ScrimCheckin.get_check_in_channels()
+        self.checkin_channels = ScrimCheckinData.get_check_in_channels()
         self.checkin_loop.start()
 
     async def get_guild_checkin_channels(self, guild: Union[discord.Guild, int]) -> List[discord.TextChannel]:
@@ -21,6 +21,18 @@ class ScrimCheckin(commands.Cog):
         scrims: List[Scrim] = ScrimsData.get_active_scrims()
         for scrim in scrims:
             if scrim.is_checkin_active():
-                # Check to see if that checkin message has been sent.
+                checkin_time = scrim
+                checkin_channels = ScrimCheckinData.get_guild_checkin_channels(scrim.scrim_guild)
+                has_start_been_sent: bool = ScrimCheckinData.get_checkin_channel_start_message_sent(scrim.scrim_id)
+                if not has_start_been_sent:
+                    for channel in checkin_channels:
+                        pass # TODO: Add a checkin message here to send.
+            else:
+                checkin_channels = ScrimCheckinData.get_guild_checkin_channels(scrim.scrim_guild)
+                has_end_been_sent: bool = ScrimCheckinData.get_checkin_channel_end_message_sent(scrim.scrim_id)
+                if not has_end_been_sent:
+                    for channel in checkin_channels:
+                        pass # TODO: Send the checkin end message here.
+                    
                 pass # TODO: Implement this
             

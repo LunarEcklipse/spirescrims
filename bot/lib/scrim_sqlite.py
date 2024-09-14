@@ -110,22 +110,109 @@ def database_transaction(func): # This is a decorator that wraps a function in a
 @database_transaction
 def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
     '''Initializes the database.'''
-    cur.execute("CREATE TABLE IF NOT EXISTS scrim_users (internal_user_id TEXT PRIMARY KEY NOT NULL, username TEXT, discord_id INTEGER, sweet_id TEXT, twitch_id TEXT);")
-    cur.execute("CREATE TABLE IF NOT EXISTS api_data (auth_token TEXT, auth_expiration TEXT);")
-    cur.execute("CREATE TABLE IF NOT EXISTS ocr_reader_channels (guild_id INTEGER, channel_id INTEGER, PRIMARY KEY(guild_id, channel_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_partial_cache (sweet_id TEXT PRIMARY KEY NOT NULL, display_name TEXT, last_updated TEXT);")
-    cur.execute("CREATE TABLE IF NOT EXISTS sweet_user_cache (sweet_id TEXT PRIMARY KEY NOT NULL, json_data TEXT, last_updated TEXT, FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS teams_master (team_id TEXT PRIMARY KEY NOT NULL, team_name TEXT NOT NULL, team_guild INTEGER NOT NULL);")
+
+    # Scrim User Data
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_users
+                (internal_user_id TEXT PRIMARY KEY NOT NULL,
+                username TEXT,
+                discord_id INTEGER,
+                sweet_id TEXT,
+                twitch_id TEXT
+                );''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS player_stats
+                (user_id TEXT PRIMARY KEY NOT NULL,
+                mmr INTEGER NOT NULL,
+                priority INTEGER NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));''')
+    
+    # Scrim teams
+    cur.execute('''CREATE TABLE IF NOT EXISTS teams_master
+                (team_id TEXT PRIMARY KEY NOT NULL,
+                team_name TEXT NOT NULL,
+                team_guild INTEGER NOT NULL);''')
     cur.execute("CREATE TABLE IF NOT EXISTS team_members (team_id TEXT NOT NULL, user_id TEXT NOT NULL, is_owner INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams_master(team_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS player_stats (user_id TEXT PRIMARY KEY NOT NULL, mmr INTEGER NOT NULL, priority INTEGER NOT NULL, FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS scrim_checkin_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS scrim_dropout_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS scrims (scrim_id TEXT PRIMARY KEY NOT NULL, scrim_guild_id INTEGER NOT NULL, format INTEGER NOT NULL, is_active INTEGER NOT NULL);")
-    cur.execute("CREATE TABLE IF NOT EXISTS scrim_run_times (scrim_id TEXT NOT NULL, checkin_start_time TEXT NOT NULL, checkin_end_time TEXT NOT NULL, scrim_start_time TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS scrim_active_checkins (scrim_id TEXT NOT NULL, checkin_end_time TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS solo_scrim_checkin (scrim_id TEXT NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS team_scrim_checkin (scrim_id TEXT NOT NULL, team_id TEXT NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id), FOREIGN KEY(team_id) REFERENCES teams_master(team_id));")
-    cur.execute("CREATE TABLE IF NOT EXISTS scrim_checkin_update_message_sent (scrim_id TEXT NOT NULL, checkin_start_sent INTEGER NOT NULL, checkin_end_sent INTEGER NOT NULL, FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));")
+
+    # API Data
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS api_data
+                (auth_token TEXT,
+                auth_expiration TEXT);''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS sweet_user_partial_cache
+                (sweet_id TEXT PRIMARY KEY NOT NULL,
+                display_name TEXT,
+                last_updated TEXT);''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS sweet_user_cache
+                (sweet_id TEXT PRIMARY KEY NOT NULL,
+                json_data TEXT,
+                last_updated TEXT,
+                FOREIGN KEY(sweet_id) REFERENCES sweet_user_partial_cache(sweet_id));''')
+
+    # Reader stuff
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS ocr_reader_channels
+                (guild_id INTEGER,
+                channel_id INTEGER,
+                PRIMARY KEY(guild_id, channel_id));''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS ocr_reader_results
+                (result_id TEXT PRIMARY KEY NOT NULL,
+                guild_id INTEGER NOT NULL,
+                channel_id INTEGER NOT NULL,
+                user_id TEXT NOT NULL,
+                image BLOB,
+                image_url TEXT,
+                total_score INTEGER NOT NULL,
+                elimination_score INTEGER NOT NULL,
+                vault_terminal_score INTEGER NOT NULL,
+                entered_vault INTEGER NOT NULL,
+                last_spy_standing INTEGER NOT NULL,
+                extracted INTEGER NOT NULL,
+                allies_revived INTEGER NOT NULL,
+                manual_adjustment INTEGER NOT NULL,
+                calculation_time TEXT NOT NULL);''')
+    
+    # Scrim Operational Data
+    cur.execute('''CREATE TABLE IF NOT EXISTS scrims
+                (scrim_id TEXT PRIMARY KEY NOT NULL,
+                scrim_guild_id INTEGER NOT NULL,
+                format INTEGER NOT NULL,
+                is_active INTEGER NOT NULL);''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_checkin_channels
+                (guild_id INTEGER NOT NULL,
+                channel_id INTEGER NOT NULL,
+                PRIMARY KEY(guild_id, channel_id));''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_dropout_channels
+                (guild_id INTEGER NOT NULL,
+                channel_id INTEGER NOT NULL,
+                PRIMARY KEY(guild_id, channel_id));''')
+    
+    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_run_times
+                (scrim_id TEXT NOT NULL,
+                checkin_start_time TEXT NOT NULL,
+                checkin_end_time TEXT NOT NULL,
+                scrim_start_time TEXT NOT NULL,
+                FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_active_checkins
+                (scrim_id TEXT NOT NULL,
+                checkin_end_time TEXT NOT NULL,
+                FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS solo_scrim_checkin
+                (scrim_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id),
+                FOREIGN KEY(user_id) REFERENCES scrim_users(internal_user_id));''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS team_scrim_checkin
+                (scrim_id TEXT NOT NULL,
+                team_id TEXT NOT NULL,
+                FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id),
+                FOREIGN KEY(team_id) REFERENCES teams_master(team_id));''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_checkin_update_message_sent
+                (scrim_id TEXT NOT NULL,
+                checkin_start_sent INTEGER NOT NULL,
+                checkin_end_sent INTEGER NOT NULL,
+                FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));''')
+    
+    # Debug
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_debug_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
     
     scrim_logger.debug("Database initialized.")
@@ -383,7 +470,7 @@ class ScrimsData:
             scrim = scrim.scrim_id
         cur.execute("UPDATE scrims SET is_active = 0 WHERE scrim_id = ?;", (scrim,))
 
-class ScrimCheckin:
+class ScrimCheckinData:
     @staticmethod
     @database_transaction
     def get_check_in_channels(cur, guild_ids: Union[List[discord.Guild], discord.Guild, List[int], int, None] = None) -> List[int]:
@@ -456,7 +543,27 @@ class ScrimCheckin:
     
     @staticmethod
     @database_transaction
-    def set_checkin_channel_message_sent(cur, scrim_id: str):
+    def get_checkin_channel_start_message_sent(cur, scrim_id: str) -> bool:
+        '''Checks if the checkin start message for a specific scrim has been sent or not yet.'''
+        cur.execute("SELECT * FROM scrim_checkin_update_message_sent WHERE scrim_id = ?;", (scrim_id,))
+        result = cur.fetchone()
+        if result is None:
+            return False
+        return BoolConvert.convert_int_to_bool(result[1])
+    
+    @staticmethod
+    @database_transaction
+    def get_checkin_channel_end_message_sent(cur, scrim_id: str) -> bool:
+        '''Checks if the checkin end message for a specific scrim has been sent or not yet.'''
+        cur.execute("SELECT * FROM scrim_checkin_update_message_sent WHERE scrim_id = ?;", (scrim_id,))
+        result = cur.fetchone()
+        if result is None:
+            return False
+        return BoolConvert.convert_int_to_bool(result[2])
+
+    @staticmethod
+    @database_transaction
+    def set_checkin_channel_start_message_sent(cur, scrim_id: str):
         '''Sets the check-in message sent status to true.'''
         cur.execute("UPDATE scrim_checkin_update_message_sent SET checkin_start_sent = 1 WHERE scrim_id = ?;", (scrim_id,))
 
