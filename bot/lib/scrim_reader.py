@@ -319,7 +319,8 @@ class OCRReaderProcess:
             return None
         # Create the regex pattern
         pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?vault ?terminals? ?disabled')
-        pattern2 = re.compile(r'vault ?terminals? ?disabled') # Our backup regex
+        pattern2 = re.compile(r'(?i)vault ?terminals? ?disabled ?= ?([0-9IiOo]+)') # We try and integer divide by 1 here
+        pattern3 = re.compile(r'vault ?terminals? ?disabled') # Our backup regex
         if type(text) == str:
             text = [text]
         for line in text:
@@ -330,7 +331,15 @@ class OCRReaderProcess:
             if match:
                 # Get the number of vault terminals disabled on the front of the line
                 return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
-            match = pattern2.search(line) # Backup, report unknown
+            match = pattern2.search(line)
+            if match:
+                # Get the number of vault terminals disabled on the front of the line
+                match int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))):
+                    case 0:
+                        return -1
+                    case 150:
+                        return 1
+            match = pattern3.search(line) # Backup, report unknown
             if match:
                 scrim_logger.debug(f"Vault Terminals Disabled was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
                 return -1
@@ -438,11 +447,12 @@ class OCRReaderProcess:
         self.reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
         scrim_logger.debug(f"OCR Reader Process Initialized for Thread: {self.thread_name}")
         self.ocr_ready = True
+        image_task: ImageProcessTask = None
         while True:
             try:
                 while True:
                     image_task: ImageProcessTask = self.read_queue.get(block=True) # Wait until an image becomes available for the processor
-                    image_task.image = self._resize_image_shortest_side(image_task.image, 720)
+                    image_task.image = self._resize_image_shortest_side(image_task.image, 1080)
                     image_task.image = scrim_imageprocessing.binarize_image(image_task.image) # Binarize the image
                     image_buffer = io.BytesIO()
                     image_task.image.save(image_buffer, format='PNG')

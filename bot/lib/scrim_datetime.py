@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+from typing import Union
 
 ### DISCORD DATESTRING GENERATORS ###
 
@@ -44,6 +45,9 @@ class DiscordDatestring:
         return string.startswith("<t:") and string.endswith(">")
 
     @staticmethod
-    def get_datetime_from_discord_timestamp(timestamp: str) -> datetime:
+    def get_datetime_from_discord_timestamp(timestamp: str) -> Union[datetime, None]:
         '''Returns a datetime object from a Discord timestamp string.'''
-        return datetime.fromtimestamp(int(timestamp.split(":")[1]), timezone.utc)
+        try:
+            return datetime.fromtimestamp(int(timestamp.split(":")[1]), timezone.utc)
+        except ValueError:
+            raise ValueError("Invalid Discord timestamp string.")

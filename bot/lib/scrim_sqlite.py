@@ -211,6 +211,11 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
                 checkin_start_sent INTEGER NOT NULL,
                 checkin_end_sent INTEGER NOT NULL,
                 FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_checkin_messages
+                (scrim_id TEXT NOT NULL,
+                checkin_start_message_id INTEGER NOT NULL,
+                checkin_end_message_id INTEGER NOT NULL,
+                FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));''')
     
     # Debug
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_debug_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
