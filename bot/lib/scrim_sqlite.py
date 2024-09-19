@@ -213,6 +213,7 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
                 FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));''')
     cur.execute('''CREATE TABLE IF NOT EXISTS scrim_checkin_messages
                 (scrim_id TEXT NOT NULL,
+                channel_id INTEGER NOT NULL,
                 checkin_start_message_id INTEGER NOT NULL,
                 checkin_end_message_id INTEGER NOT NULL,
                 FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));''')
@@ -572,6 +573,13 @@ class ScrimCheckinData:
         '''Sets the check-in message sent status to true.'''
         cur.execute("UPDATE scrim_checkin_update_message_sent SET checkin_start_sent = 1 WHERE scrim_id = ?;", (scrim_id,))
 
+    @staticmethod
+    @database_transaction
+    def set_checkin_channel_start_message(cur, scrim_id: str, channel_id: int, message_id: Union[discord.Message, int]):
+        '''Sets the check-in message sent status to true.'''
+        if isinstance(message_id, discord.Message):
+            message_id = message_id.id
+        cur.execute("INSERT INTO scrim_checkin_messages (scrim_id, channel_id, checkin_start_message_id) VALUES (?, ?, ?);", (scrim_id, channel_id, message_id))
     # TODO: Scrim data storage here
 
 class ScrimDebugChannels:
