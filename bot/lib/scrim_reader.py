@@ -18,11 +18,15 @@ try:
     import paddleocr
     scrim_logger.info("PaddleOCR loaded.")
     is_paddle_active = True
-    paddleocr_reader = paddleocr.PaddleOCR(use_angle_cls=True, lang="en", use_gpu=scrim_sysinfo.system_has_gpu()) # We load this to make sure the model is downloaded.
+    scrim_logger.info("Checking if PaddleOCR model is downloaded...")
+    paddleocr_reader = paddleocr.PaddleOCR(use_angle_cls=True, lang="en", use_gpu=scrim_sysinfo.system_has_gpu(), show_log=False) # We load this to make sure the model is downloaded.
 except ImportError as e:
     print(e)
     scrim_logger.warning("PaddleOCR is not installed. Defaulting to EasyOCR instead.")
 import easyocr
+scrim_logger.info("Checking if EasyOCR model is downloaded...")
+easyocr_reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
+del easyocr_reader # We load this to make sure the model is downloaded.
 
 channel_id_list: List[int] = []
 for i in channel_id_list:
@@ -518,198 +522,9 @@ class ScrimReader(commands.Cog):
             p.join()
 
     def spawn_processes(self, num_ocr_processes: int = ScrimArgs().num_reader_threads):
-        # Import OCR engines
-        if is_paddle_active:
-            scrim_logger.debug("PaddleOCR loaded.")
-        else:
-            load_paddleocr()
-            if is_paddle_active:
-                scrim_logger.debug("PaddleOCR loaded.")
-            else:
-                scrim_logger.warning("PaddleOCR failed to load.")
-            load_easyocr()
         scrim_logger.debug(f"Attempting to spawn {str(num_ocr_processes)} OCR Reader Processes...")
         for i in range(num_ocr_processes):
             self.reader_processes.append(OCRReaderProcess(self.read_queue, self.results_queue, self.error_queue, f"OCRReaderProcess_{i}"))
-
-    ### READER FUNCTIONS ###
-
-    def _resize_image_shortest_side(self, img: Image, size: int) -> Image:
-        '''Resizes an image so that the shortest side is a certain size.
-        ### Parameters
-        `img` : Image - The image to resize.
-        `size` : int - The size of the shortest side.'''
-        if min(img.size) <= size:
-            return img
-        width, height = img.size
-        if width < height:
-            ratio = size / width
-            new_width = size
-            new_height = int(height * ratio)
-        else:
-            ratio = size / height
-            new_height = size
-            new_width = int(width * ratio)
-        return img.resize((new_width, new_height))
-
-    def _find_num_eliminations(self, text: Union[List[str], str, None]) -> Union[int, None]:
-        '''Finds the number of eliminations in a list of strings.'''
-        if text is None:
-            return None
-        # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?eli?m?i?nations?')
-        pattern2 = re.compile(r'eli?m?i?nations?') # We assume 1 here, this is a last ditch backup effort
-        if type(text) == str:
-            text = [text]
-        for line in text:
-            # First make line lowercase
-            line = line.lower()
-            # Search for the pattern
-            match = pattern1.search(line)
-            if match:
-                # Get the number of eliminations on the front of the line
-                return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
-            match = pattern2.search(line) # If we reach here, we can't read the number and thus should report -1 to indicate an unknown result.
-            if match:
-                return -1
-        return None
-
-    def _find_if_entered_vault(self, text: Union[List[str], str, None]) -> bool:
-        '''Finds if the word "vault entered" is in a list of strings.
-        ### Parameters
-        `text` : Union[List[str], str, None - The list of strings to search.'''
-        if text is None:
-            return False
-        # Create the regex pattern
-        pattern = re.compile(r'(?i)vault ?entered')
-        if type(text) == str:
-            text = [text]
-        for line in text:
-            # First make line lowercase
-            line = line.lower()
-            # Search for the pattern
-            match = pattern.search(line)
-            if match:
-                return True
-        return False
-
-    def _find_num_vault_terminals_disabled(self, text: Union[List[str], str, None]) -> Union[int, None]:
-        '''Finds the number of vault terminals disabled in a list of strings.
-        ### Parameters
-        `text` : Union[List[str], str, None - The list of strings to search.'''
-        if text is None:
-            return None
-        # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?vault ?terminals? ?disabled')
-        pattern2 = re.compile(r'vault ?terminals? ?disabled') # Our backup regex
-        if type(text) == str:
-            text = [text]
-        for line in text:
-            # First make line lowercase
-            line = line.lower()
-            # Search for the pattern
-            match = pattern1.search(line)
-            if match:
-                # Get the number of vault terminals disabled on the front of the line
-                return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
-            match = pattern2.search(line) # Backup, report unknown
-            if match:
-                return -1
-        return None
-
-    def _find_last_spy_standing(self, text: Union[List[str], str, None]) -> bool:
-        '''Finds if the word "last spy standing" is in a list of strings.
-        ### Parameters
-        `text` : Union[List[str], str, None - The list of strings to search.'''
-        if text is None:
-            return False
-        # Create the regex pattern
-        pattern = re.compile(r'(?i)last ?spy ?standing')
-        if type(text) == str:
-            text = [text]
-        for line in text:
-            # First make line lowercase
-            line = line.lower()
-            # Search for the pattern
-            match = pattern.search(line)
-            if match:
-                return True
-        return False
-    
-    def _find_if_extracted(self, text: Union[List[str], str, None]) -> bool:
-        '''Finds if the word "extracted" is in a list of strings.
-        ### Parameters
-        `text` : Union[List[str], str, None - The list of strings to search.'''
-        if text is None:
-            return False
-        # Create the regex pattern
-        pattern = re.compile(r'(?i)extracted')
-        if type(text) == str:
-            text = [text]
-        for line in text:
-            # First make line lowercase
-            line = line.lower()
-            # Search for the pattern
-            match = pattern.search(line)
-            if match:
-                return True
-        return False
-
-    def _find_num_allies_revived(self, text: Union[List[str], str, None]) -> Union[int, None]:
-        '''Finds the number of allies revived in a list of strings.
-        ### Parameters
-        `text` : `Union[List[str], str, None]` - The list of strings to search.'''
-        if text is None:
-            return None
-        # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?ally ?revived')
-        pattern2 = re.compile(r'ally ?revived') # Our backup regex
-        if type(text) == str:
-            text = [text]
-        for line in text:
-            # First make line lowercase
-            line = line.lower()
-            # Search for the pattern
-            match = pattern1.search(line)
-            if match:
-                # Get the number of allies revived on the front of the line
-                return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
-            match = pattern2.search(line) # Backup, report unknown
-            if match:
-                return -1
-        return None
-    
-    def _calculate_score_from_text(self, text: List[str]) -> MatchScore:
-        '''Calculates the score from a list of strings.'''
-        eliminations = self._find_num_eliminations(text)
-        vault_entered = self._find_if_entered_vault(text)
-        vault_terminals_disabled = self._find_num_vault_terminals_disabled(text)
-        last_spy_standing = self._find_last_spy_standing(text)
-        extracted = self._find_if_extracted(text)
-        allies_revived = self._find_num_allies_revived(text)
-        match_score = MatchScore(0)
-        if eliminations is not None:
-            match_score.total_score += eliminations if eliminations != -1 else 0
-            match_score.eliminations = eliminations
-            match_score.eliminations_known = True if eliminations != -1 else False
-        if vault_entered:
-            match_score.total_score += 1
-            match_score.vault_entered = True
-        if vault_terminals_disabled is not None:
-            match_score.total_score += vault_terminals_disabled if vault_terminals_disabled != -1 else 0
-            match_score.vault_terminals_disabled = vault_terminals_disabled
-            match_score.terminals_disabled_known = True if vault_terminals_disabled != -1 else False
-        if last_spy_standing:
-            match_score.total_score += 4
-            match_score.last_spy_standing = True
-        if extracted:
-            match_score.total_score += 4
-            match_score.extracted = True
-        if allies_revived is not None:
-            match_score.total_score -= allies_revived if allies_revived != -1 else 0
-            match_score.allies_revived = allies_revived
-            match_score.allies_revived_known = True if allies_revived != -1 else False
-        return match_score
     
     ### LISTENERS ###
     @commands.Cog.listener()
