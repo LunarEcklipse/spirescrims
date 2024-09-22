@@ -1,4 +1,4 @@
-import os, sys, io, easyocr, re, warnings, multiprocessing
+import os, sys, io, re, warnings, multiprocessing
 from typing import Union, List
 from datetime import datetime, timedelta
 from threading import Thread
@@ -11,6 +11,18 @@ from lib.scrim_logging import scrim_logger
 from lib.scrim_sqlite import ScrimUserData, DeceiveReaderActiveChannels
 from lib.scrim_args import ScrimArgs
 import lib.scrim_imageprocessing as scrim_imageprocessing
+
+is_paddle_active: bool = False
+
+try:
+    import paddleocr
+    scrim_logger.info("PaddleOCR loaded.")
+    is_paddle_active = True
+    paddleocr_reader = paddleocr.PaddleOCR(use_angle_cls=True, lang="en", use_gpu=scrim_sysinfo.system_has_gpu()) # We load this to make sure the model is downloaded.
+except ImportError as e:
+    print(e)
+    scrim_logger.warning("PaddleOCR is not installed. Defaulting to EasyOCR instead.")
+import easyocr
 
 channel_id_list: List[int] = []
 for i in channel_id_list:
@@ -218,7 +230,8 @@ class ImageProcessTask:
         await self.message.edit(content=content, embed=embed)
 
 class OCRReaderProcess:
-    reader: easyocr.Reader
+    easyocr_reader: 'easyocr.Reader'
+    paddleocr_reader = 'paddleOCR.PaddleOCR'
     read_queue: Queue
     results_queue: Queue
     error_queue: Queue
@@ -261,9 +274,9 @@ class OCRReaderProcess:
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?eliminations?')
-        pattern2 = re.compile(r'(?i)eliminations ?= ?([0-9IiOo]+)') # We try and integer divide by 1 here
-        pattern3 = re.compile(r'eliminations?') # We assume 1 here, this is a last ditch backup effort
+        pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?eli?m?i?nations?')
+        pattern2 = re.compile(r'(?i)eli?m?i?nations ?= ?([0-9IiOo]+)') # We try and integer divide by 1 here
+        pattern3 = re.compile(r'eli?m?i?nations?') # We assume 1 here, this is a last ditch backup effort
         if type(text) == str:
             text = [text]
         for line in text:
@@ -277,15 +290,8 @@ class OCRReaderProcess:
             text_match = pattern2.search(line)
             if text_match:
                 # Get the elimination score from the group and see if we can figure out from there
-                match int(text_match.group(1).lower().translate(str.maketrans("IiOo", "1100"))):
-                    case 0:
-                        return -1 # We can't determine it from a 0 score
-                    case 100: # This covers the most common failure case where the OCR can't read the 1.
-                        return 1
-                    case 160:
-                        return 1
-                    case _:
-                        return -1
+                return int(text_match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) % 100
+
             text_match = pattern3.search(line) # If we reach here, we can't read the number and thus should report -1 to indicate an unknown result.
             if text_match:
                 scrim_logger.debug(f"Eliminations was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
@@ -444,7 +450,11 @@ class OCRReaderProcess:
     def _read_image_process(self):
         '''The main image processing loop for the OCR reader process.'''
         scrim_logger.debug(f"Starting OCR Reader Process for Thread: {self.thread_name}")
-        self.reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
+        
+        if is_paddle_active:
+            self.paddle_reader = paddleocr.PaddleOCR(use_angle_cls=True, lang="en", show_log=False, use_gpu=scrim_sysinfo.system_has_gpu())
+        else:
+            self.easyocr_reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
         scrim_logger.debug(f"OCR Reader Process Initialized for Thread: {self.thread_name}")
         self.ocr_ready = True
         image_task: ImageProcessTask = None
@@ -454,13 +464,25 @@ class OCRReaderProcess:
                     image_task: ImageProcessTask = self.read_queue.get(block=True) # Wait until an image becomes available for the processor
                     image_task.image = self._resize_image_shortest_side(image_task.image, 1080)
                     image_task.image = scrim_imageprocessing.binarize_image(image_task.image) # Binarize the image
+                    image_task.image = scrim_imageprocessing.sharpen_image(image_task.image)
+                    image_task.image.show()
                     image_buffer = io.BytesIO()
                     image_task.image.save(image_buffer, format='PNG')
                     image_buffer.seek(0)
-                    result = self.reader.readtext(image_buffer.getvalue())
-                    raw_result: list = []
-                    for detection in result:
-                        raw_result.append(detection[1])
+                    # Display the image buffer
+                    if is_paddle_active:
+                        # Convert the image buffer to bytes
+
+                        result = self.paddle_reader.ocr(image_buffer.getvalue(), cls=True)[0]
+                        raw_result: list = []
+                        for detection in result:
+                            raw_result.append(detection[1][0])
+                        image_task.score = self._calculate_score_from_text(raw_result)
+                    else:
+                        result = self.easyocr_reader.readtext(image_buffer.getvalue())
+                        raw_result: list = []
+                        for detection in result:
+                            raw_result.append(detection[1])
                     image_task.score = self._calculate_score_from_text(raw_result)
                     self.results_queue.put(image_task)
             except Exception as e:
@@ -468,8 +490,8 @@ class OCRReaderProcess:
                 scrim_logger.error(e)
                 self.error_queue.put(ImageProcessError(image_task.image, image_task.message, image_task.attachment_url))
                 scrim_logger.debug(f"Restarting OCR Reader Process for Thread: {self.thread_name}")
-                self.reader = None # Clear out and then restart the reader to clear any issues.
-                self.reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
+                self.easyocr_reader = None # Clear out and then restart the reader to clear any issues.
+                self.easyocr_reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
                 scrim_logger.debug(f"OCR Reader Process Restarted for Thread: {self.thread_name}")
                 ocr_ready = True
 
@@ -496,6 +518,16 @@ class ScrimReader(commands.Cog):
             p.join()
 
     def spawn_processes(self, num_ocr_processes: int = ScrimArgs().num_reader_threads):
+        # Import OCR engines
+        if is_paddle_active:
+            scrim_logger.debug("PaddleOCR loaded.")
+        else:
+            load_paddleocr()
+            if is_paddle_active:
+                scrim_logger.debug("PaddleOCR loaded.")
+            else:
+                scrim_logger.warning("PaddleOCR failed to load.")
+            load_easyocr()
         scrim_logger.debug(f"Attempting to spawn {str(num_ocr_processes)} OCR Reader Processes...")
         for i in range(num_ocr_processes):
             self.reader_processes.append(OCRReaderProcess(self.read_queue, self.results_queue, self.error_queue, f"OCRReaderProcess_{i}"))
@@ -525,8 +557,8 @@ class ScrimReader(commands.Cog):
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?eliminations?')
-        pattern2 = re.compile(r'eliminations?') # We assume 1 here, this is a last ditch backup effort
+        pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?eli?m?i?nations?')
+        pattern2 = re.compile(r'eli?m?i?nations?') # We assume 1 here, this is a last ditch backup effort
         if type(text) == str:
             text = [text]
         for line in text:
@@ -708,3 +740,4 @@ class ScrimReader(commands.Cog):
         while not self.error_queue.empty():
             task: ImageProcessError = self.error_queue.get()
             await task.message.edit(content="", embed=task.create_embed())
+
