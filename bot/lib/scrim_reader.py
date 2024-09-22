@@ -174,7 +174,8 @@ class MatchScore:
         return out
 
     def create_embed(self, image_url: Union[str, None] = None) -> discord.Embed:
-        emb: discord.Embed = discord.Embed(title=f"Estimated Score: {self.total_score}", color=0x8000ff, timestamp=datetime.now())
+        out_color = 0xffff00 if self.is_score_uncertain() else 0x8000ff
+        emb: discord.Embed = discord.Embed(title=f"Estimated Score: {self.total_score}", color=out_color, timestamp=datetime.now())
         emb.description = "**NOTE: Score Is Uncertain! Please Manually Verify Results!**" if self.is_score_uncertain() else ""
         emb.set_author(name="Scoreboard Analysis")
         embed_str: str = ""
@@ -278,8 +279,8 @@ class OCRReaderProcess:
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?eli?m?i?nations?')
-        pattern2 = re.compile(r'(?i)eli?m?i?nations ?= ?([0-9IiOo]+)') # We try and integer divide by 1 here
+        pattern1 = re.compile(r'(?i)([0-9IiOoTt]+) ?eli?m?i?nations?')
+        pattern2 = re.compile(r'(?i)eli?m?i?nations ?= ?([0-9IiOoTt]+)') # We try and integer divide by 1 here
         pattern3 = re.compile(r'eli?m?i?nations?') # We assume 1 here, this is a last ditch backup effort
         if type(text) == str:
             text = [text]
@@ -290,11 +291,11 @@ class OCRReaderProcess:
             text_match = pattern1.search(line)
             if text_match:
                 # Get the number of eliminations on the front of the line
-                return int(text_match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
+                return int(text_match.group(1).lower().translate(str.maketrans("IiOoTt", "110011"))) # Convert all I's to 1's and O's to 0's
             text_match = pattern2.search(line)
             if text_match:
                 # Get the elimination score from the group and see if we can figure out from there
-                return int(text_match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) % 100
+                return int(text_match.group(1).lower().translate(str.maketrans("IiOoTt", "110011"))) % 100
 
             text_match = pattern3.search(line) # If we reach here, we can't read the number and thus should report -1 to indicate an unknown result.
             if text_match:
@@ -328,8 +329,8 @@ class OCRReaderProcess:
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?vault ?terminals? ?disabled')
-        pattern2 = re.compile(r'(?i)vault ?terminals? ?disabled ?= ?([0-9IiOo]+)') # We try and integer divide by 1 here
+        pattern1 = re.compile(r'(?i)([0-9IiOoTt]+) ?vault ?terminals? ?disabled')
+        pattern2 = re.compile(r'(?i)vault ?terminals? ?disabled ?= ?([0-9IiOoTt]+)') # We try and integer divide by 1 here
         pattern3 = re.compile(r'vault ?terminals? ?disabled') # Our backup regex
         if type(text) == str:
             text = [text]
@@ -340,11 +341,11 @@ class OCRReaderProcess:
             match = pattern1.search(line)
             if match:
                 # Get the number of vault terminals disabled on the front of the line
-                return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
+                return int(match.group(1).lower().translate(str.maketrans("IiOoTt", "110011"))) # Convert all I's to 1's and O's to 0's
             match = pattern2.search(line)
             if match:
                 # Get the number of vault terminals disabled on the front of the line
-                match int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))):
+                match int(match.group(1).lower().translate(str.maketrans("IiOoTt", "110011"))):
                     case 0:
                         return -1
                     case 150:
@@ -400,7 +401,7 @@ class OCRReaderProcess:
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOo]+) ?ally ?revived')
+        pattern1 = re.compile(r'(?i)([0-9IiOoTt]+) ?ally ?revived')
         pattern2 = re.compile(r'[Tt]?\s?ally ?r+evived') # Our backup regex
         if type(text) == str:
             text = [text]
@@ -411,7 +412,7 @@ class OCRReaderProcess:
             match = pattern1.search(line)
             if match:
                 # Get the number of allies revived on the front of the line
-                return int(match.group(1).lower().translate(str.maketrans("IiOo", "1100"))) # Convert all I's to 1's and O's to 0's
+                return int(match.group(1).lower().translate(str.maketrans("IiOoTt", "110011"))) # Convert all I's to 1's and O's to 0's
             match = pattern2.search(line) # Backup, report unknown
             if match:
                 scrim_logger.debug(f"Allies Revived was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
@@ -466,17 +467,15 @@ class OCRReaderProcess:
             try:
                 while True:
                     image_task: ImageProcessTask = self.read_queue.get(block=True) # Wait until an image becomes available for the processor
-                    image_task.image = self._resize_image_shortest_side(image_task.image, 1080)
+                    image_task.image = self._resize_image_shortest_side(image_task.image, 720)
                     image_task.image = scrim_imageprocessing.binarize_image(image_task.image) # Binarize the image
                     image_task.image = scrim_imageprocessing.sharpen_image(image_task.image)
-                    image_task.image.show()
                     image_buffer = io.BytesIO()
                     image_task.image.save(image_buffer, format='PNG')
                     image_buffer.seek(0)
                     # Display the image buffer
                     if is_paddle_active:
                         # Convert the image buffer to bytes
-
                         result = self.paddle_reader.ocr(image_buffer.getvalue(), cls=True)[0]
                         raw_result: list = []
                         for detection in result:
