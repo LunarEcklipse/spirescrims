@@ -186,16 +186,10 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
                 channel_id INTEGER NOT NULL,
                 PRIMARY KEY(guild_id, channel_id));''')
     
-    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_run_times
-                (scrim_id TEXT NOT NULL,
-                checkin_start_time TEXT NOT NULL,
-                checkin_end_time TEXT NOT NULL,
-                scrim_start_time TEXT NOT NULL,
-                FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));''')
-    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_active_checkins
-                (scrim_id TEXT NOT NULL,
-                checkin_end_time TEXT NOT NULL,
-                FOREIGN KEY(scrim_id) REFERENCES scrims(scrim_id));''')
+    cur.execute('''CREATE TABLE "scrim_run_times" (
+                "guild_id"	INTEGER NOT NULL,
+                "format"	TEXT NOT NULL,
+                "start_time"	TEXT NOT NULL);''')
     cur.execute('''CREATE TABLE IF NOT EXISTS solo_scrim_checkin
                 (scrim_id TEXT NOT NULL,
                 user_id TEXT NOT NULL,
@@ -206,17 +200,14 @@ def init_scrim_db(cur: sqlean.Connection.cursor) -> None:
                 team_id TEXT NOT NULL,
                 FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id),
                 FOREIGN KEY(team_id) REFERENCES teams_master(team_id));''')
-    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_checkin_update_message_sent
-                (scrim_id TEXT NOT NULL,
-                checkin_start_sent INTEGER NOT NULL,
-                checkin_end_sent INTEGER NOT NULL,
-                FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));''')
-    cur.execute('''CREATE TABLE IF NOT EXISTS scrim_checkin_messages
-                (scrim_id TEXT NOT NULL,
-                channel_id INTEGER NOT NULL,
-                checkin_start_message_id INTEGER NOT NULL,
-                checkin_end_message_id INTEGER NOT NULL,
-                FOREIGN KEY(scrim_id) REFERENCES active_scrims(scrim_id));''')
+    cur.execute('''CREATE TABLE "scrim_checkin_messages"
+                ("scrim_id"	TEXT NOT NULL,
+                "channel_id"	INTEGER NOT NULL,
+                "checkin_start_message_id"	INTEGER NOT NULL,
+                "checkin_start_send_time"	TEXT,
+                "checkin_end_message_id"	INTEGER NOT NULL,
+                "checkin_end_send_time"	TEXT,
+                FOREIGN KEY("scrim_id") REFERENCES "active_scrims"("scrim_id"));''')
     
     # Debug
     cur.execute("CREATE TABLE IF NOT EXISTS scrim_debug_channels (guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, PRIMARY KEY(guild_id, channel_id));")
@@ -479,108 +470,61 @@ class ScrimsData:
 class ScrimCheckinData:
     @staticmethod
     @database_transaction
-    def get_check_in_channels(cur, guild_ids: Union[List[discord.Guild], discord.Guild, List[int], int, None] = None) -> List[int]:
-        '''Gets the scrim check-in channels. If a guild is supplied, searches for that particular guild.'''
+    def get_check_in_channels(cur, guild_id: Union[discord.Guild, int]) -> List[int]:
+        '''Gets the scrim check-in channels for a particular guild'''
         out = []
-        if guild_ids is None:
-            cur.execute("SELECT * FROM scrim_checkin_channels;")
-            out.append([result[1] for result in cur.fetchall()])
-        elif isinstance(guild_ids, discord.Guild):
-            guild_ids = guild_ids.id
-            cur.execute("SELECT * FROM scrim_checkin_channels WHERE guild_id = ?;", (guild_ids,))
-            result = cur.fetchall()
-            if result is not None:
-                out.append([result[1] for result in result])
-        elif type(guild_ids) == list:
-            for guild_id in guild_ids:
-                if isinstance(guild_id, discord.Guild):
-                    guild_id = guild_id.id
-                cur.execute("SELECT * FROM scrim_checkin_channels WHERE guild_id = ?;", (guild_id,))
-                result = cur.fetchall()
-                if result is not None:
-                    out.append([result[1] for result in result])
-        elif type(guild_ids) == int:
-            cur.execute("SELECT * FROM scrim_checkin_channels WHERE guild_id = ?;", (guild_ids,))
-            result = cur.fetchall()
-            if result is not None:
-                out.append([result[1] for result in result])
-        else:
-            for guild_id in guild_ids:
-                cur.execute("SELECT * FROM scrim_checkin_channels WHERE guild_id = ?;", (guild_id,))
-                result = cur.fetchall()
-                if result is not None:
-                    out.append([result[1] for result in result])
-        return out
+        cur.execute("SELECT channel_id FROM scrim_checkin_channels WHERE guild_id = ?;", (guild_id,))
+        results = cur.fetchall()
+        return [result[0] for result in results]
     
     @staticmethod
     @database_transaction
-    def get_dropout_channels(cur, guild_ids: Union[List[discord.Guild], discord.Guild, List[int], int, None] = None) -> List[int]:
-        '''Gets the scrim dropout channels. If a guild is supplied, searches for that particular guild.'''
+    def get_drop_out_channels(cur, guild_id: Union[discord.Guild, int]) -> List[int]:
+        '''Gets the scrim drop-out channels for a particular guild.'''
         out = []
-        if guild_ids is None:
-            cur.execute("SELECT * FROM scrim_dropout_channels;")
-            out.append([result[1] for result in cur.fetchall()])
-        elif isinstance(guild_ids, discord.Guild):
-            guild_ids = guild_ids.id
-            cur.execute("SELECT * FROM scrim_dropout_channels WHERE guild_id = ?;", (guild_ids,))
-            result = cur.fetchall()
-            if result is not None:
-                out.append([result[1] for result in result])
-        elif type(guild_ids) == list:
-            for guild_id in guild_ids:
-                if isinstance(guild_id, discord.Guild):
-                    guild_id = guild_id.id
-                cur.execute("SELECT * FROM scrim_dropout_channels WHERE guild_id = ?;", (guild_id,))
-                result = cur.fetchall()
-                if result is not None:
-                    out.append([result[1] for result in result])
-        elif type(guild_ids) == int:
-            cur.execute("SELECT * FROM scrim_dropout_channels WHERE guild_id = ?;", (guild_ids,))
-            result = cur.fetchall()
-            if result is not None:
-                out.append([result[1] for result in result])
-        else:
-            for guild_id in guild_ids:
-                cur.execute("SELECT * FROM scrim_dropout_channels WHERE guild_id = ?;", (guild_id,))
-                result = cur.fetchall()
-                if result is not None:
-                    out.append([result[1] for result in result])
-        return out
-    
+        cur.execute("SELECT channel_id FROM scrim_dropout_channels WHERE guild_id = ?;", (guild_id,))
+        results = cur.fetchall()
+        return [result[0] for result in results]
+        
     @staticmethod
     @database_transaction
-    def get_checkin_channel_start_message_sent(cur, scrim_id: str) -> bool:
-        '''Checks if the checkin start message for a specific scrim has been sent or not yet.'''
-        cur.execute("SELECT * FROM scrim_checkin_update_message_sent WHERE scrim_id = ?;", (scrim_id,))
-        result = cur.fetchone()
-        if result is None:
-            return False
-        return BoolConvert.convert_int_to_bool(result[1])
-    
-    @staticmethod
-    @database_transaction
-    def get_checkin_channel_end_message_sent(cur, scrim_id: str) -> bool:
-        '''Checks if the checkin end message for a specific scrim has been sent or not yet.'''
-        cur.execute("SELECT * FROM scrim_checkin_update_message_sent WHERE scrim_id = ?;", (scrim_id,))
-        result = cur.fetchone()
-        if result is None:
-            return False
-        return BoolConvert.convert_int_to_bool(result[2])
+    def set_checkin_channel(cur, guild_id: Union[discord.Guild, int], channel_id: Union[discord.TextChannel, int]) -> None:
+        '''Sets a check-in channel for a guild.'''
+        if isinstance(guild_id, discord.Guild):
+            guild_id = guild_id.id
+        if isinstance(channel_id, discord.TextChannel):
+            channel_id = channel_id.id
+        cur.execute("INSERT INTO scrim_checkin_channels (guild_id, channel_id) VALUES (?, ?);", (guild_id, channel_id))
 
     @staticmethod
     @database_transaction
-    def set_checkin_channel_start_message_sent(cur, scrim_id: str):
-        '''Sets the check-in message sent status to true.'''
-        cur.execute("UPDATE scrim_checkin_update_message_sent SET checkin_start_sent = 1 WHERE scrim_id = ?;", (scrim_id,))
+    def set_dropout_channel(cur, guild_id: Union[discord.Guild, int], channel_id: Union[discord.TextChannel, int]) -> None:
+        '''Sets a drop-out channel for a guild.'''
+        if isinstance(guild_id, discord.Guild):
+            guild_id = guild_id.id
+        if isinstance(channel_id, discord.TextChannel):
+            channel_id = channel_id.id
+        cur.execute("INSERT INTO scrim_dropout_channels (guild_id, channel_id) VALUES (?, ?);", (guild_id, channel_id))
 
     @staticmethod
     @database_transaction
-    def set_checkin_channel_start_message(cur, scrim_id: str, channel_id: int, message_id: Union[discord.Message, int]):
-        '''Sets the check-in message sent status to true.'''
-        if isinstance(message_id, discord.Message):
-            message_id = message_id.id
-        cur.execute("INSERT INTO scrim_checkin_messages (scrim_id, channel_id, checkin_start_message_id) VALUES (?, ?, ?);", (scrim_id, channel_id, message_id))
-    # TODO: Scrim data storage here
+    def set_scrim_autorun_time(cur, guild_id: Union[discord.Guild, int], format: ScrimFormat, start_time: datetime) -> None:
+        '''Sets the autorun time for a scrim format.'''
+        if isinstance(guild_id, discord.Guild):
+            guild_id = guild_id.id
+        cur.execute("INSERT INTO scrim_run_times (guild_id, format, start_time) VALUES (?, ?, ?);", (guild_id, format.value, DatetimeConvert.convert_datetime_to_str(start_time)))
+
+    @staticmethod
+    @database_transaction
+    def get_scrim_autorun_time(cur, guild_id: Union[discord.Guild, int], format: ScrimFormat) -> Union[datetime, None]:
+        '''Gets the autorun time for a scrim format.'''
+        if isinstance(guild_id, discord.Guild):
+            guild_id = guild_id.id
+        cur.execute("SELECT start_time FROM scrim_run_times WHERE guild_id = ? AND format = ?;", (guild_id, format.value))
+        result = cur.fetchone()
+        if result is None:
+            return None
+        return DatetimeConvert.convert_str_to_datetime(result[0])
 
 class ScrimDebugChannels:
     @staticmethod
