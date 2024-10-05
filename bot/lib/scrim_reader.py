@@ -23,10 +23,10 @@ try:
 except ImportError as e:
     print(e)
     scrim_logger.warning("PaddleOCR is not installed. Defaulting to EasyOCR instead.")
-import easyocr
-scrim_logger.info("Checking if EasyOCR model is downloaded...")
-easyocr_reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
-del easyocr_reader # We load this to make sure the model is downloaded.
+    import easyocr
+    scrim_logger.info("Checking if EasyOCR model is downloaded...")
+    easyocr_reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
+    del easyocr_reader # We load this to make sure the model is downloaded.
 
 channel_id_list: List[int] = []
 for i in channel_id_list:
@@ -487,8 +487,12 @@ class OCRReaderProcess:
                 scrim_logger.error(e)
                 self.error_queue.put(ImageProcessError(image_task.image, image_task.message, image_task.attachment_url))
                 scrim_logger.debug(f"Restarting OCR Reader Process for Thread: {self.thread_name}")
-                self.easyocr_reader = None # Clear out and then restart the reader to clear any issues.
-                self.easyocr_reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
+                if is_paddle_active:
+                    self.paddle_reader = None
+                    self.paddle_reader = paddleocr.PaddleOCR(use_angle_cls=True, lang="en", show_log=False, use_gpu=scrim_sysinfo.system_has_gpu())
+                else:
+                    self.easyocr_reader = None # Clear out and then restart the reader to clear any issues.
+                    self.easyocr_reader = easyocr.Reader(['en'], verbose=False, gpu=scrim_sysinfo.system_has_gpu())
                 scrim_logger.debug(f"OCR Reader Process Restarted for Thread: {self.thread_name}")
                 ocr_ready = True
 

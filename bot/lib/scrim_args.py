@@ -13,7 +13,7 @@ class ScrimArgs:
         parser = argparse.ArgumentParser(description="ScrimBot")
         parser.add_argument("--log-level", type=str, default="INFO", help="The logging level to use. Options are: DEBUG, INFO, WARNING, ERROR, CRITICAL.")
         parser.add_argument("--disable-reader", action="store_true", help="Disables OCR reader functionality. Useful for systems that can not run the reader.")
-        parser.add_argument("--num-reader-threads", type=int, default=8, help="The number of OCR reader threads to use for reading images. Lower this if performance is poor.")
+        parser.add_argument("--num-reader-threads", type=int, default=4, help="The number of OCR reader threads to use for reading images. Each process takes up a significant amount of memory. Change this as needed to suit how much memory your system has available.")
         parser.add_argument("--reader-cpu-only", action="store_true", help="Disables the use of the GPU for OCR reading. Useful for systems that can not run the reader.")
         return parser.parse_args()
     
