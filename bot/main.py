@@ -59,6 +59,8 @@ bot.add_cog(ScrimDebugCommands(bot))
 async def on_ready():
     scrim_logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})') #type: ignore
     api = await scrim_di_api.DeceiveIncAPIClient.initialize(os.getenv("DI_CLIENT_ID"), os.getenv("DI_CLIENT_SECRET")) #type: ignore
+    # user = await api.get_user("2840ll9j-5lh8-63k4-0731-5hm07l66m974")
+    # print(user)
     # im = ScrimPlots.calculate_agent_pickrates_over_seasons(sw)
     # im.save("test.png")
 

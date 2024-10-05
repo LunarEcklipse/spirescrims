@@ -1,4 +1,4 @@
-import os, sys, io, re, warnings, multiprocessing
+import os, sys, io, re, warnings, multiprocessing, regex
 from typing import Union, List
 from datetime import datetime, timedelta
 from threading import Thread
@@ -279,25 +279,24 @@ class OCRReaderProcess:
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOoTt]+) ?eli?m?i?nations?')
-        pattern2 = re.compile(r'(?i)eli?m?i?nations ?= ?([0-9IiOoTt]+)') # We try and integer divide by 1 here
-        pattern3 = re.compile(r'eli?m?i?nations?') # We assume 1 here, this is a last ditch backup effort
+        pattern1 = '(?i)(([0-9IiOoTt]+) ?eli?m?i?nation[s$]?){e<=3}'
+        pattern2 = '(?i)(eli?m?i?nation[s$] ?= ?([0-9IiOoTt]+)){e<=3}' # We try and integer divide by 1 here
+        pattern3 = '(?i)(eli?m?i?nation[s$]?){e<=2}' # We assume 1 here, this is a last ditch backup effort
         if type(text) == str:
             text = [text]
         for line in text:
             # First make line lowercase
             line = line.lower()
             # Search for the pattern
-            text_match = pattern1.search(line)
+            text_match = regex.search(pattern1, line, regex.BESTMATCH)
             if text_match:
                 # Get the number of eliminations on the front of the line
-                return int(text_match.group(1).lower().translate(str.maketrans("IiOoTt", "110011"))) # Convert all I's to 1's and O's to 0's
-            text_match = pattern2.search(line)
+                return int(text_match.group(2).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) # Convert all I's to 1's and O's to 0's
+            text_match = regex.search(pattern2, line, regex.BESTMATCH)
             if text_match:
                 # Get the elimination score from the group and see if we can figure out from there
-                return int(text_match.group(1).lower().translate(str.maketrans("IiOoTt", "110011"))) % 100
-
-            text_match = pattern3.search(line) # If we reach here, we can't read the number and thus should report -1 to indicate an unknown result.
+                return int(text_match.group(2).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) % 100
+            text_match = regex.search(pattern3, line, regex.BESTMATCH) # If we reach here, we can't read the number and thus should report -1 to indicate an unknown result.
             if text_match:
                 scrim_logger.debug(f"Eliminations was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
                 return -1
@@ -310,14 +309,12 @@ class OCRReaderProcess:
         if text is None:
             return False
         # Create the regex pattern
-        pattern = re.compile(r'(?i)vault ?entered')
+        pattern = '(?i)([iuvyf]?a[uvy]lt ?entered){e<=3}'
         if type(text) == str:
             text = [text]
         for line in text:
-            # First make line lowercase
-            line = line.lower()
             # Search for the pattern
-            match = pattern.search(line)
+            match = regex.search(pattern, line, regex.BESTMATCH)
             if match:
                 return True
         return False
@@ -329,28 +326,29 @@ class OCRReaderProcess:
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOoTt]+) ?vault ?terminals? ?disabled')
-        pattern2 = re.compile(r'(?i)vault ?terminals? ?disabled ?= ?([0-9IiOoTt]+)') # We try and integer divide by 1 here
-        pattern3 = re.compile(r'vault ?terminals? ?disabled') # Our backup regex
+        pattern1 = '(?i)(([0-9IiOoTtSs]+) ?[iuvy]?a[iuvy]lt ?terminal[s$]? ?di[s$]abled){e<=3}'
+        # pattern1 = re.compile(f'(?i)([0-9IiOoTt]+) ?[iuvy]?a[iuvy]lt ?terminal[s$]? ?di[s$]abled')
+        pattern2 ='(?i)([iuvy]?a[iuvy]lt ?terminal[s$]? ?di[s$]abled ?= ?([0-9IiOoTtSs]+)){e<=3}' # We try and integer divide by 1 here
+        pattern3 = '(?i)([iuvy]?a[iuvy]lt ?terminal[s$]? ?di[s$]abled){e<=3}' # Our backup regex
         if type(text) == str:
             text = [text]
         for line in text:
-            # First make line lowercase
-            line = line.lower()
             # Search for the pattern
-            match = pattern1.search(line)
+            match = regex.search(pattern1, line, regex.BESTMATCH)
             if match:
                 # Get the number of vault terminals disabled on the front of the line
-                return int(match.group(1).lower().translate(str.maketrans("IiOoTt", "110011"))) # Convert all I's to 1's and O's to 0's
-            match = pattern2.search(line)
+                return int(match.group(2).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) # Convert all I's to 1's and O's to 0's
+            match = regex.search(pattern2, line, regex.BESTMATCH)
             if match:
                 # Get the number of vault terminals disabled on the front of the line
-                match int(match.group(1).lower().translate(str.maketrans("IiOoTt", "110011"))):
+                match int(match.group(2).lower().translate(str.maketrans("IiOoTtSs", "11001155"))):
                     case 0:
                         return -1
                     case 150:
                         return 1
-            match = pattern3.search(line) # Backup, report unknown
+                    case _:
+                        return match(int(match.group(2).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) % 100)
+            match = regex.search(pattern3, line, regex.BESTMATCH) # Backup, report unknown
             if match:
                 scrim_logger.debug(f"Vault Terminals Disabled was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
                 return -1
@@ -363,14 +361,12 @@ class OCRReaderProcess:
         if text is None:
             return False
         # Create the regex pattern
-        pattern = re.compile(r'(?i)last ?spy ?standing')
+        pattern = '([li1][a4][s$][ty] ?[s$]p[yt] ?[s$][ty][a4]nd[i1]ng){e<=3}'
         if type(text) == str:
             text = [text]
         for line in text:
-            # First make line lowercase
-            line = line.lower()
             # Search for the pattern
-            match = pattern.search(line)
+            match = regex.search(pattern, line, regex.BESTMATCH)
             if match:
                 return True
         return False
@@ -382,14 +378,12 @@ class OCRReaderProcess:
         if text is None:
             return False
         # Create the regex pattern
-        pattern = re.compile(r'(?i)extracted')
+        pattern = '(extracted){e<=3}'
         if type(text) == str:
             text = [text]
         for line in text:
-            # First make line lowercase
-            line = line.lower()
             # Search for the pattern
-            match = pattern.search(line)
+            match = regex.search(pattern, line, regex.BESTMATCH)
             if match:
                 return True
         return False
@@ -401,19 +395,19 @@ class OCRReaderProcess:
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = re.compile(r'(?i)([0-9IiOoTt]+) ?ally ?revived')
-        pattern2 = re.compile(r'[Tt]?\s?ally ?r+evived') # Our backup regex
+        pattern1 = '(?i)(([0-9IiOoTtSs]+) ?ally ?revived){e<=3}'
+        pattern2 = '(?i)([Tt]? ?ally ?r+evived){e<=3}' # Our backup regex
         if type(text) == str:
             text = [text]
         for line in text:
             # First make line lowercase
             line = line.lower()
             # Search for the pattern
-            match = pattern1.search(line)
+            match = regex.search(pattern1, line, regex.BESTMATCH)
             if match:
                 # Get the number of allies revived on the front of the line
-                return int(match.group(1).lower().translate(str.maketrans("IiOoTt", "110011"))) # Convert all I's to 1's and O's to 0's
-            match = pattern2.search(line) # Backup, report unknown
+                return int(match.group(2).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) # Convert all I's to 1's and O's to 0's
+            match = regex.search(pattern2, line, regex.BESTMATCH) # Backup, report unknown
             if match:
                 scrim_logger.debug(f"Allies Revived was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
                 return -1
@@ -479,13 +473,13 @@ class OCRReaderProcess:
                         result = self.paddle_reader.ocr(image_buffer.getvalue(), cls=True)[0]
                         raw_result: list = []
                         for detection in result:
-                            raw_result.append(detection[1][0])
+                            raw_result.append(detection[1][0].lower())
                         image_task.score = self._calculate_score_from_text(raw_result)
                     else:
                         result = self.easyocr_reader.readtext(image_buffer.getvalue())
                         raw_result: list = []
                         for detection in result:
-                            raw_result.append(detection[1])
+                            raw_result.append(str(detection[1]).lower())
                     image_task.score = self._calculate_score_from_text(raw_result)
                     self.results_queue.put(image_task)
             except Exception as e:

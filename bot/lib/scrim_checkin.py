@@ -26,21 +26,11 @@ class ScrimCheckin(commands.Cog):
 
     @tasks.loop(seconds=60)
     async def checkin_loop(self):
-        # Iterate through all active scrims and get their checkin times.
-        scrims: List[Scrim] = ScrimsData.get_active_scrims()
-        for scrim in scrims:
-            if scrim.is_checkin_active():
-                checkin_time = scrim
-                checkin_channels = ScrimCheckinData.get_guild_checkin_channels(scrim.scrim_guild)
-                has_start_been_sent: bool = ScrimCheckinData.get_checkin_channel_start_message_sent(scrim.scrim_id)
-                if not has_start_been_sent:
-                    await self.send_start_checkin_message(scrim)
-            else:   
-                checkin_channels = ScrimCheckinData.get_guild_checkin_channels(scrim.scrim_guild)
-                has_end_been_sent: bool = ScrimCheckinData.get_checkin_channel_end_message_sent(scrim.scrim_id)
-                if not has_end_been_sent:
-                    for channel in checkin_channels:
-                        pass # TODO: Send the checkin end message here.
-                    
-                pass # TODO: Implement this
-            
+        pass
+        # 1. Retrieve from the database any autorun scrims that need to be started
+        # 2. Mark those scrims as started
+        # 3. Send a message to the checkin channels for any active scrims that haven't had a message sent yet
+        # 4. Check if any sign ups have ended and close those signups.
+        # 5. Generate player lists for closed sign ups.
+        # 6. Check if any scrims have ended and mark them as ended.
+
