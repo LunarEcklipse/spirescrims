@@ -279,8 +279,8 @@ class OCRReaderProcess:
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = '(?i)(([0-9IiOoTt]+) ?eli?m?i?nation[s$]?){e<=3}'
-        pattern2 = '(?i)(eli?m?i?nation[s$] ?= ?([0-9IiOoTt]+)){e<=3}' # We try and integer divide by 1 here
+        pattern1 = '(?i)([0-9IiOoTt]+)( ?eli?m?i?nation[s$]?){e<=3}'
+        pattern2 = '(?i)(eli?m?i?nation[s$] ?= ?){e<=3}([0-9IiOoTt]+)' # We try and integer divide by 1 here
         pattern3 = '(?i)(eli?m?i?nation[s$]?){e<=2}' # We assume 1 here, this is a last ditch backup effort
         if type(text) == str:
             text = [text]
@@ -291,7 +291,7 @@ class OCRReaderProcess:
             text_match = regex.search(pattern1, line, regex.BESTMATCH)
             if text_match:
                 # Get the number of eliminations on the front of the line
-                return int(text_match.group(2).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) # Convert all I's to 1's and O's to 0's
+                return int(text_match.group(1).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) # Convert all I's to 1's and O's to 0's
             text_match = regex.search(pattern2, line, regex.BESTMATCH)
             if text_match:
                 # Get the elimination score from the group and see if we can figure out from there
@@ -326,9 +326,9 @@ class OCRReaderProcess:
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = '(?i)(([0-9IiOoTtSs]+) ?[iuvy]?a[iuvy]lt ?terminal[s$]? ?di[s$]abled){e<=3}'
+        pattern1 = '(?i)([0-9IiOoTtSs]+)( ?[iuvy]?a[iuvy]lt ?terminal[s$]? ?di[s$]abled){e<=3}'
         # pattern1 = re.compile(f'(?i)([0-9IiOoTt]+) ?[iuvy]?a[iuvy]lt ?terminal[s$]? ?di[s$]abled')
-        pattern2 ='(?i)([iuvy]?a[iuvy]lt ?terminal[s$]? ?di[s$]abled ?= ?([0-9IiOoTtSs]+)){e<=3}' # We try and integer divide by 1 here
+        pattern2 ='(?i)([iuvy]?a[iuvy]lt ?terminal[s$]? ?di[s$]abled ?= ?){e<=3}([0-9IiOoTtSs]+)' # We try and integer divide by 1 here
         pattern3 = '(?i)([iuvy]?a[iuvy]lt ?terminal[s$]? ?di[s$]abled){e<=3}' # Our backup regex
         if type(text) == str:
             text = [text]
@@ -337,7 +337,7 @@ class OCRReaderProcess:
             match = regex.search(pattern1, line, regex.BESTMATCH)
             if match:
                 # Get the number of vault terminals disabled on the front of the line
-                return int(match.group(2).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) # Convert all I's to 1's and O's to 0's
+                return int(match.group(1).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) # Convert all I's to 1's and O's to 0's
             match = regex.search(pattern2, line, regex.BESTMATCH)
             if match:
                 # Get the number of vault terminals disabled on the front of the line
@@ -395,7 +395,7 @@ class OCRReaderProcess:
         if text is None:
             return None
         # Create the regex pattern
-        pattern1 = '(?i)(([0-9IiOoTtSs]+) ?ally ?revived){e<=3}'
+        pattern1 = '(?i)([0-9IiOoTtSs]+)( ?ally ?revived){e<=3}'
         pattern2 = '(?i)([Tt]? ?ally ?r+evived){e<=3}' # Our backup regex
         if type(text) == str:
             text = [text]
@@ -406,7 +406,7 @@ class OCRReaderProcess:
             match = regex.search(pattern1, line, regex.BESTMATCH)
             if match:
                 # Get the number of allies revived on the front of the line
-                return int(match.group(2).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) # Convert all I's to 1's and O's to 0's
+                return int(match.group(1).lower().translate(str.maketrans("IiOoTtSs", "11001155"))) # Convert all I's to 1's and O's to 0's
             match = regex.search(pattern2, line, regex.BESTMATCH) # Backup, report unknown
             if match:
                 scrim_logger.debug(f"Allies Revived was found in strings but number not found, reporting unknown. Text was: \"{line}\".")
