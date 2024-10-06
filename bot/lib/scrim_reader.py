@@ -274,7 +274,7 @@ class OCRReaderProcess:
         scrim_logger.debug(f"Resizing Image to {new_width}x{new_height}")
         return img.resize((new_width, new_height))
 
-    def _find_num_eliminations(self, text: Union[List[str], str, None]) -> Union[int, None]:
+    def _find_num_eliminations(self, text: Union[List[str], str, None], confidence: float = None) -> Union[int, None]:
         '''Finds the number of eliminations in a list of strings.'''
         if text is None:
             return None
@@ -302,7 +302,7 @@ class OCRReaderProcess:
                 return -1
         return None
 
-    def _find_if_entered_vault(self, text: Union[List[str], str, None]) -> bool:
+    def _find_if_entered_vault(self, text: Union[List[str], str, None], confidence: float = None) -> bool:
         '''Finds if the word "vault entered" is in a list of strings.
         ### Parameters
         `text` : Union[List[str], str, None - The list of strings to search.'''
@@ -319,7 +319,7 @@ class OCRReaderProcess:
                 return True
         return False
 
-    def _find_num_vault_terminals_disabled(self, text: Union[List[str], str, None]) -> Union[int, None]:
+    def _find_num_vault_terminals_disabled(self, text: Union[List[str], str, None], confidence: float = None) -> Union[int, None]:
         '''Finds the number of vault terminals disabled in a list of strings.
         ### Parameters
         `text` : Union[List[str], str, None - The list of strings to search.'''
@@ -354,7 +354,7 @@ class OCRReaderProcess:
                 return -1
         return None
 
-    def _find_last_spy_standing(self, text: Union[List[str], str, None]) -> bool:
+    def _find_last_spy_standing(self, text: Union[List[str], str, None], confidence: float = None) -> bool:
         '''Finds if the word "last spy standing" is in a list of strings.
         ### Parameters
         `text` : Union[List[str], str, None - The list of strings to search.'''
@@ -371,7 +371,7 @@ class OCRReaderProcess:
                 return True
         return False
     
-    def _find_if_extracted(self, text: Union[List[str], str, None]) -> bool:
+    def _find_if_extracted(self, text: Union[List[str], str, None], confidence: float = None) -> bool:
         '''Finds if the word "extracted" is in a list of strings.
         ### Parameters
         `text` : Union[List[str], str, None - The list of strings to search.'''
@@ -388,7 +388,7 @@ class OCRReaderProcess:
                 return True
         return False
 
-    def _find_num_allies_revived(self, text: Union[List[str], str, None]) -> Union[int, None]:
+    def _find_num_allies_revived(self, text: Union[List[str], str, None], confidence: float = None) -> Union[int, None]:
         '''Finds the number of allies revived in a list of strings.
         ### Parameters
         `text` : `Union[List[str], str, None]` - The list of strings to search.'''
@@ -461,7 +461,7 @@ class OCRReaderProcess:
             try:
                 while True:
                     image_task: ImageProcessTask = self.read_queue.get(block=True) # Wait until an image becomes available for the processor
-                    image_task.image = self._resize_image_shortest_side(image_task.image, 720)
+                    image_task.image = self._resize_image_shortest_side(image_task.image, 1024)
                     image_task.image = scrim_imageprocessing.binarize_image(image_task.image) # Binarize the image
                     image_task.image = scrim_imageprocessing.sharpen_image(image_task.image)
                     image_buffer = io.BytesIO()
@@ -472,6 +472,7 @@ class OCRReaderProcess:
                         # Convert the image buffer to bytes
                         result = self.paddle_reader.ocr(image_buffer.getvalue(), cls=True)[0]
                         raw_result: list = []
+                        bad_reads: list = []
                         for detection in result:
                             raw_result.append(detection[1][0].lower())
                         image_task.score = self._calculate_score_from_text(raw_result)
