@@ -36,7 +36,7 @@ for i in channel_id_list:
 warnings.filterwarnings("ignore", category=FutureWarning, module="easyocr")
 
 class MatchScore:
-    total_score: int
+    maximum_score: int
     eliminations: int
     eliminations_known: bool
     vault_terminals_disabled: int
@@ -48,14 +48,16 @@ class MatchScore:
     extracted: bool
 
     def __init__(self,
-                 total_score: int,
+                 maximum_score: int,
                  eliminations: Union[int, None] = 0,
                  vault_terminals_disabled: Union[int, None] = 0,
                  allies_revived: Union[int, None] = 0,
                  vault_entered: bool = False,
                  last_spy_standing: bool = False,
-                 extracted: bool = False):
-        self.total_score = total_score
+                 extracted: bool = False,
+                 minimum_score: int = 0):
+        self.minimum_score = minimum_score
+        self.maximum_score = maximum_score
         self.eliminations = eliminations if eliminations is not None else 0
         if self.is_eliminations_wrong():
             self.match_score -= self.eliminations
@@ -69,6 +71,10 @@ class MatchScore:
         self.vault_entered = vault_entered
         self.last_spy_standing = last_spy_standing
         self.extracted = extracted
+
+    def is_score_variable(self) -> bool:
+        '''Returns whether the score is variable. This is a temporary fix for allies revived being different in teams but the bot is currently unable to understand that context.'''
+        return self.maximum_score != self.minimum_score
 
     def is_score_uncertain(self) -> bool:
         '''Returns whether the score is uncertain.'''
@@ -131,11 +137,11 @@ class MatchScore:
             case -1:
                 return 'Unknown Allies Revived: ?'
             case 1:
-                return '1 Ally Revived: -1'
+                return '1 Ally Revived: -1 — 0'
             case _:
                 if self.is_allies_revived_weird():
-                    return f'{self.allies_revived} Allies Revived: -{self.allies_revived} **(Requires Validation)**'
-                return f'{self.allies_revived} Allies Revived: -{self.allies_revived}'
+                    return f'{self.allies_revived} Allies Revived: {(self.allies_revived * -1)} — {(self.allies_revived - 1) * -1} **(Requires Validation)**'
+                return f'{self.allies_revived} Allies Revived: {(self.allies_revived * -1)} — -{(self.allies_revived - 1) * -1}'
 
     def _get_last_spy_standing_score_formatted(self) -> Union[str, None]:
         '''Returns the Last Spy Standing score as a formatted string.'''
@@ -150,10 +156,14 @@ class MatchScore:
         return self.eliminations == 0 and self.vault_terminals_disabled == 0 and self.allies_revived == 0 and not self.vault_entered and not self.last_spy_standing and not self.extracted
     
     def __repr__(self) -> str:
-        return f"MatchScore(total_score={self.total_score}, eliminations={self.eliminations}, vault_terminals_disabled={self.vault_terminals_disabled}, allies_revived={self.allies_revived}, vault_entered={self.vault_entered}, last_spy_standing={self.last_spy_standing}, extracted={self.extracted})"
+        return f"MatchScore(total_score={self.maximum_score}, eliminations={self.eliminations}, vault_terminals_disabled={self.vault_terminals_disabled}, allies_revived={self.allies_revived}, vault_entered={self.vault_entered}, last_spy_standing={self.last_spy_standing}, extracted={self.extracted})"
     
     def __str__(self) -> str:
-        out = f"**Estimated Score:** {self.total_score}"
+        out: str = ""
+        if self.is_score_variable():
+            out += f"**Estimated Score: {self.minimum_score} — {self.maximum_score}**"
+        else:
+            out += f"**Estimated Score:** {self.maximum_score}"
         if self.is_score_uncertain():
             out += " (**Score is Uncertain: See Below**)"
         if self.has_no_score_events():
@@ -175,7 +185,9 @@ class MatchScore:
 
     def create_embed(self, image_url: Union[str, None] = None) -> discord.Embed:
         out_color = 0xffff00 if self.is_score_uncertain() else 0x8000ff
-        emb: discord.Embed = discord.Embed(title=f"Estimated Score: {self.total_score}", color=out_color, timestamp=datetime.now())
+        emb: discord.Embed = discord.Embed(title=f"Estimated Score: {self.maximum_score}", color=out_color, timestamp=datetime.now())
+        if self.is_score_variable():
+            emb.title = f"Estimated Score: {self.minimum_score} — {self.maximum_score}"
         emb.description = "**NOTE: Score Is Uncertain! Please Manually Verify Results!**" if self.is_score_uncertain() else ""
         emb.set_author(name="Scoreboard Analysis")
         embed_str: str = ""
@@ -423,27 +435,33 @@ class OCRReaderProcess:
         allies_revived = self._find_num_allies_revived(text)
         match_score = MatchScore(0)
         if eliminations is not None:
-            match_score.total_score += eliminations if eliminations != -1 else 0
+            match_score.maximum_score += eliminations if eliminations != -1 else 0
+            match_score.minimum_score += eliminations if eliminations != -1 else 0
             match_score.eliminations = eliminations
             match_score.eliminations_known = True if eliminations != -1 else False
         if vault_entered:
-            match_score.total_score += 1
+            match_score.maximum_score += 1
+            match_score.minimum_score += 1
             match_score.vault_entered = True
         if vault_terminals_disabled is not None:
-            match_score.total_score += vault_terminals_disabled if vault_terminals_disabled != -1 else 0
+            match_score.maximum_score += vault_terminals_disabled if vault_terminals_disabled != -1 else 0
+            match_score.minimum_score += vault_terminals_disabled if vault_terminals_disabled != -1 else 0
             match_score.vault_terminals_disabled = vault_terminals_disabled
             match_score.terminals_disabled_known = True if vault_terminals_disabled != -1 else False
         if last_spy_standing:
-            match_score.total_score += 4
+            match_score.maximum_score += 4
+            match_score.minimum_score += 4
             match_score.last_spy_standing = True
         if extracted:
-            match_score.total_score += 4
+            match_score.maximum_score += 4
+            match_score.maximum_score += 4
             match_score.extracted = True
         if allies_revived is not None:
-            match_score.total_score -= allies_revived if allies_revived != -1 else 0
+            match_score.minimum_score -= allies_revived if allies_revived != -1 else 0
+            match_score.maximum_score -= (allies_revived - 1) if allies_revived != -1 else 0
             match_score.allies_revived = allies_revived
             match_score.allies_revived_known = True if allies_revived != -1 else False
-        scrim_logger.debug(f"Calculated Match Score: {str(match_score.total_score)}")
+        scrim_logger.debug(f"Calculated Match Score: {str(match_score.maximum_score)}")
         return match_score
 
     def _read_image_process(self):
