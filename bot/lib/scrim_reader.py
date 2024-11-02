@@ -36,6 +36,7 @@ for i in channel_id_list:
 warnings.filterwarnings("ignore", category=FutureWarning, module="easyocr")
 
 class MatchScore:
+    minimum_score: int
     maximum_score: int
     eliminations: int
     eliminations_known: bool
@@ -46,6 +47,8 @@ class MatchScore:
     vault_entered: bool
     last_spy_standing: bool
     extracted: bool
+    first_package_capture: bool
+
 
     def __init__(self,
                  maximum_score: int,
@@ -55,6 +58,7 @@ class MatchScore:
                  vault_entered: bool = False,
                  last_spy_standing: bool = False,
                  extracted: bool = False,
+                 first_package_capture: bool = False,
                  minimum_score: int = 0):
         self.minimum_score = minimum_score
         self.maximum_score = maximum_score
@@ -71,6 +75,7 @@ class MatchScore:
         self.vault_entered = vault_entered
         self.last_spy_standing = last_spy_standing
         self.extracted = extracted
+        self.first_package_capture = first_package_capture
 
     def is_score_variable(self) -> bool:
         '''Returns whether the score is variable. This is a temporary fix for allies revived being different in teams but the bot is currently unable to understand that context.'''
@@ -128,6 +133,10 @@ class MatchScore:
                 if self.is_vault_terminals_disabled_weird():
                     return f'{self.vault_terminals_disabled} Vault Terminals Disabled: {self.vault_terminals_disabled} **(Requires Validation)**'
                 return f'{self.vault_terminals_disabled} Vault Terminals Disabled: {self.vault_terminals_disabled}'
+    
+    def _get_first_package_capture_score_formatted(self) -> Union[str, None]:
+        '''Returns the First Package Capture score as a formatted string.'''
+        return 'Package Taken From Podium: 2' if self.first_package_capture else None
 
     def _get_allies_revived_score_formatted(self) -> Union[str, None]:
         '''Returns the Allies Revived score as a formatted string.'''
@@ -141,7 +150,7 @@ class MatchScore:
             case _:
                 if self.is_allies_revived_weird():
                     return f'{self.allies_revived} Allies Revived: {(self.allies_revived * -1)} — {(self.allies_revived - 1) * -1} **(Requires Validation)**'
-                return f'{self.allies_revived} Allies Revived: {(self.allies_revived * -1)} — -{(self.allies_revived - 1) * -1}'
+                return f'{self.allies_revived} Allies Revived: {(self.allies_revived * -1)} — {(self.allies_revived - 1) * -1}'
 
     def _get_last_spy_standing_score_formatted(self) -> Union[str, None]:
         '''Returns the Last Spy Standing score as a formatted string.'''
@@ -177,6 +186,8 @@ class MatchScore:
             out += f"* {self._get_vault_terminals_disabled_score_formatted()}\n"
         if self.allies_revived > 0:
             out += f"* {self._get_allies_revived_score_formatted()}\n"
+        if self.first_package_capture:
+            out += f"* {self._get_first_package_capture_score_formatted()}\n"
         if self.last_spy_standing:
             out += f"* {self._get_last_spy_standing_score_formatted()}\n"
         if self.extracted:
@@ -199,6 +210,8 @@ class MatchScore:
             embed_str += f"* {self._get_vault_terminals_disabled_score_formatted()}\n"
         if self.allies_revived != 0:
             embed_str += f"* {self._get_allies_revived_score_formatted()}\n"
+        if self.first_package_capture:
+            embed_str += f"* {self._get_first_package_capture_score_formatted()}\n"
         if self.last_spy_standing:
             embed_str += f"* {self._get_last_spy_standing_score_formatted()}\n"
         if self.extracted:
@@ -400,6 +413,21 @@ class OCRReaderProcess:
                 return True
         return False
 
+    def _find_if_first_case_pull(self, text: Union[List[str], str, None], confidence: float = None) -> bool:
+        '''Finds if the words "First Package Capture" is in a list of strings.
+        ### Parameters
+        `text` : Union[List[str], str, None - The list of strings to search.'''
+        if text is None:
+            return False
+        pattern = '(first package capture){e<=3}'
+        if type(text) == str:
+            text = [text]
+        for line in text:
+            match = regex.search(pattern, line, regex.BESTMATCH)
+            if match:
+                return True
+        return False
+
     def _find_num_allies_revived(self, text: Union[List[str], str, None], confidence: float = None) -> Union[int, None]:
         '''Finds the number of allies revived in a list of strings.
         ### Parameters
@@ -433,27 +461,32 @@ class OCRReaderProcess:
         last_spy_standing = self._find_last_spy_standing(text)
         extracted = self._find_if_extracted(text)
         allies_revived = self._find_num_allies_revived(text)
+        first_package_capture = self._find_if_first_case_pull(text)
         match_score = MatchScore(0)
         if eliminations is not None:
-            match_score.maximum_score += eliminations if eliminations != -1 else 0
             match_score.minimum_score += eliminations if eliminations != -1 else 0
+            match_score.maximum_score += eliminations if eliminations != -1 else 0
             match_score.eliminations = eliminations
             match_score.eliminations_known = True if eliminations != -1 else False
         if vault_entered:
-            match_score.maximum_score += 1
             match_score.minimum_score += 1
+            match_score.maximum_score += 1
             match_score.vault_entered = True
         if vault_terminals_disabled is not None:
-            match_score.maximum_score += vault_terminals_disabled if vault_terminals_disabled != -1 else 0
             match_score.minimum_score += vault_terminals_disabled if vault_terminals_disabled != -1 else 0
+            match_score.maximum_score += vault_terminals_disabled if vault_terminals_disabled != -1 else 0
             match_score.vault_terminals_disabled = vault_terminals_disabled
             match_score.terminals_disabled_known = True if vault_terminals_disabled != -1 else False
+        if first_package_capture:
+            match_score.minimum_score += 2
+            match_score.maximum_score += 2
+            match_score.first_package_capture = True
         if last_spy_standing:
-            match_score.maximum_score += 4
             match_score.minimum_score += 4
+            match_score.maximum_score += 4
             match_score.last_spy_standing = True
         if extracted:
-            match_score.maximum_score += 4
+            match_score.minimum_score += 4
             match_score.maximum_score += 4
             match_score.extracted = True
         if allies_revived is not None:
@@ -561,6 +594,12 @@ class ScrimReader(commands.Cog):
                 if attachment.content_type.startswith('image'):
                     message_handle: discord.Message = await message.reply('Processing image, please wait...')
                     self.read_queue.put(ImageProcessTask(await attachment.read(), message_handle, attachment.url))
+        elif message.content == "0" or "message.content" == "zero":
+            embed = discord.Embed(title="Estimated Score: 0", color=0x8000ff, timestamp=datetime.now())
+            embed.description = "User self-reported 0."
+            embed.set_author(name="Scoreboard Analysis")
+            embed.set_footer(text="Calculated by Scrims Helper")
+            await message.reply(content="", embed=embed)
             return
 
     @tasks.loop(seconds=1)
