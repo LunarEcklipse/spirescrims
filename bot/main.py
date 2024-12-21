@@ -1,3 +1,4 @@
+print("Awake!")
 import os, sys, random
 from typing import Optional
 from dotenv import load_dotenv, find_dotenv
