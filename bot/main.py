@@ -31,7 +31,7 @@ from lib.obj.scrim_user import ScrimUser
 from lib.scrim_mmr_calculation import ScrimMMR
 from lib.scrim_debugcommands import ScrimDebugCommands
 
-scrims_version: str = "1.0.6"
+scrims_version: str = "1.0.6a"
 
 intents = discord.Intents.all()
 
@@ -42,7 +42,7 @@ scrim_logger.info(f"Starting Scrim Helper v{scrims_version}")
 # Initialize the ScrimReader cog
 if not args.disable_reader:
     if scrim_sysinfo.cpu_is_x86() and not scrim_sysinfo.cpu_supports_avx2():
-        scrim_logger.warning("You are using an x86_64 CPU does not support AVX2 instructions, which are required for EasyOCR. OCR Readers will not work.")
+        scrim_logger.warning("You are using an x86_64 CPU does not support AVX2 instructions, which are required for PaddleOCR and EasyOCR. OCR Readers will not work.")
     else:
         scrim_logger.info("Initializing Reader modules, this may take several minutes...")
         scrim_logger.debug("Initializing ScrimReader Cog...")
