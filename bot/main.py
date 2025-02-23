@@ -31,7 +31,7 @@ from lib.obj.scrim_user import ScrimUser
 from lib.scrim_mmr_calculation import ScrimMMR
 from lib.scrim_debugcommands import ScrimDebugCommands
 
-scrims_version: str = "1.0.6a"
+scrims_version: str = "1.0.6b"
 
 intents = discord.Intents.all()
 
